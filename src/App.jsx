@@ -9,6 +9,9 @@ const WORLD_STAGES = [
   { town: "Ende, The Final Realm", boss: "Aureole's Guardian", reqLevel: 20, lore: "The final test before reaching the heaven where souls rest." }
 ];
 
+// Emojis representing the magical runes you must match
+const SPELL_RUNES = ['🔮', '📜', '⚔️', '🛡️', '🌿', '💎', '🌙', '✨'];
+
 function App() {
   const [player, setPlayer] = useState({ level: 1, exp: 0, skills: [], completedChaptersCount: 0, quests: [] });
   const [isLoading, setIsLoading] = useState(true);
@@ -16,6 +19,13 @@ function App() {
   const [battleMessage, setBattleMessage] = useState("");
   const [equippedSkills, setEquippedSkills] = useState([]);
   const [restMessage, setRestMessage] = useState("");
+
+  // --- MINI GAME STATES ---
+  const [isBattling, setIsBattling] = useState(false);
+  const [cards, setCards] = useState([]);
+  const [flippedIndices, setFlippedIndices] = useState([]);
+  const [timeLeft, setTimeLeft] = useState(0);
+  const [gameStatus, setGameStatus] = useState('idle'); // idle, playing, won, lost
 
   useEffect(() => {
     const savedStage = localStorage.getItem('aethelgard_stage');
@@ -38,20 +48,96 @@ function App() {
 
   const effectiveLevel = player.level + equippedSkills.length;
 
-  const handleChallengeBoss = () => {
+  // --- BATTLE LOGIC ---
+  const startBattle = () => {
     const currentStage = WORLD_STAGES[stageIndex];
-    if (effectiveLevel >= currentStage.reqLevel) {
-      setBattleMessage(`Victory! Your magic dismantled ${currentStage.boss}.`);
-      const nextStage = stageIndex + 1;
-      setStageIndex(nextStage);
-      localStorage.setItem('aethelgard_stage', nextStage);
-      setTimeout(() => setBattleMessage(""), 4000);
-    } else {
-      setBattleMessage(`Defeat... Your effective level is ${effectiveLevel}. You need to be Level ${currentStage.reqLevel}.`);
+    const diff = currentStage.reqLevel - effectiveLevel;
+    const isUnderleveled = diff > 0;
+
+    // Scaling difficulty based on effective level
+    const numPairs = isUnderleveled ? 8 : 6;
+    const initialTime = isUnderleveled ? Math.max(15, 45 - (diff * 5)) : 60;
+
+    // Generate and shuffle the deck
+    const selectedRunes = SPELL_RUNES.slice(0, numPairs);
+    const deck = [...selectedRunes, ...selectedRunes]
+      .sort(() => Math.random() - 0.5)
+      .map((emoji, idx) => ({ id: idx, emoji, isFlipped: false, isMatched: false }));
+
+    setCards(deck);
+    setTimeLeft(initialTime);
+    setGameStatus('playing');
+    setFlippedIndices([]);
+    setIsBattling(true);
+  };
+
+  const handleCardClick = (index) => {
+    if (gameStatus !== 'playing') return;
+    if (flippedIndices.length === 2) return; // Prevent clicking too fast
+    if (cards[index].isFlipped || cards[index].isMatched) return;
+
+    const newIndices = [...flippedIndices, index];
+    setFlippedIndices(newIndices);
+
+    const newCards = [...cards];
+    newCards[index].isFlipped = true;
+    setCards(newCards);
+
+    // Check for a match
+    if (newIndices.length === 2) {
+      const [firstIndex, secondIndex] = newIndices;
+      if (newCards[firstIndex].emoji === newCards[secondIndex].emoji) {
+        newCards[firstIndex].isMatched = true;
+        newCards[secondIndex].isMatched = true;
+        setCards(newCards);
+        setFlippedIndices([]);
+
+        // Check for victory
+        if (newCards.every(c => c.isMatched)) {
+          setGameStatus('won');
+          handleWin();
+        }
+      } else {
+        // No match, flip back after a short delay
+        setTimeout(() => {
+          const resetCards = [...cards];
+          resetCards[firstIndex].isFlipped = false;
+          resetCards[secondIndex].isFlipped = false;
+          setCards(resetCards);
+          setFlippedIndices([]);
+        }, 800);
+      }
+    }
+  };
+
+  // Timer Countdown
+  useEffect(() => {
+    if (isBattling && gameStatus === 'playing' && timeLeft > 0) {
+      const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
+      return () => clearTimeout(timer);
+    } else if (timeLeft === 0 && gameStatus === 'playing') {
+      setGameStatus('lost');
+      setTimeout(() => closeBattle("Defeat... You lost your focus. Rest and try again."), 2000);
+    }
+  }, [timeLeft, isBattling, gameStatus]);
+
+  const handleWin = () => {
+    const currentStage = WORLD_STAGES[stageIndex];
+    const nextStage = stageIndex + 1;
+    setStageIndex(nextStage);
+    localStorage.setItem('aethelgard_stage', nextStage);
+    setTimeout(() => closeBattle(`Victory! Your magic dismantled ${currentStage.boss}.`), 2000);
+  };
+
+  const closeBattle = (message) => {
+    setIsBattling(false);
+    if (message) {
+      setBattleMessage(message);
       setTimeout(() => setBattleMessage(""), 4000);
     }
   };
 
+  // --- GENERAL LOGIC ---
   const toggleEquipSkill = (skill) => {
     if (equippedSkills.includes(skill)) {
       setEquippedSkills(equippedSkills.filter(s => s !== skill));
@@ -80,6 +166,36 @@ function App() {
 
   return (
     <div className="rpg-container">
+      {/* --- BATTLE OVERLAY MODAL --- */}
+      {isBattling && (
+        <div className="battle-overlay">
+          <div className="battle-modal">
+            <div className="battle-stats">
+              <span>Time: <strong style={{ color: timeLeft <= 5 ? '#ff9999' : 'inherit' }}>{timeLeft}s</strong></span>
+              <button className="flee-btn" onClick={() => closeBattle("You fled the encounter.")}>Flee</button>
+            </div>
+            
+            {gameStatus === 'won' && <h2 className="battle-result victory">Magic Dispelled!</h2>}
+            {gameStatus === 'lost' && <h2 className="battle-result defeat">Focus Broken!</h2>}
+
+            <div className={`battle-grid pairs-${cards.length / 2}`}>
+              {cards.map((card, index) => (
+                <div 
+                  key={card.id} 
+                  className={`battle-card ${card.isFlipped || card.isMatched ? 'flipped' : ''}`}
+                  onClick={() => handleCardClick(index)}
+                >
+                  <div className="card-inner">
+                    <div className="card-front">{card.emoji}</div>
+                    <div className="card-back"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       <header className="game-header">
         <h1>Traveler of Aethelgard</h1>
         <p className="subtitle">Location: {isGameBeaten ? "The Peaceful Era" : currentStage.town}</p>
@@ -109,11 +225,11 @@ function App() {
       {!isGameBeaten && (
         <div className="boss-card">
           <div className="boss-header">
-            <h2>Path Blocked: {currentStage.boss}</h2>
+            <h2>BOSS ALERT: {currentStage.boss}</h2>
             <span className="boss-level">Req: LVL {currentStage.reqLevel}</span>
           </div>
           <p className="boss-lore">"{currentStage.lore}"</p>
-          <button className="challenge-btn" onClick={handleChallengeBoss}>Attempt to Dispel Magic</button>
+          <button className="challenge-btn" onClick={startBattle}>Attempt to Dispel Magic</button>
           {battleMessage && (
             <div className={`battle-message ${battleMessage.includes('Victory') ? 'victory' : 'defeat'}`}>{battleMessage}</div>
           )}
@@ -133,7 +249,6 @@ function App() {
             <img src="https://api.dicebear.com/7.x/adventurer/svg?seed=Aethelgard&backgroundColor=transparent" alt="Character Portrait" />
           </div>
           
-          {/* NEW: Wrapper for Level and Train Button */}
           <div className="profile-details">
             <div className="level-badge">
               <span className="level-label">LVL</span>
