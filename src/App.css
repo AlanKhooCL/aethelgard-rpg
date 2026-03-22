@@ -328,3 +328,183 @@ body {
 .victory-card h2 {
   color: var(--accent-gold);
 }
+
+/* Add to bottom of src/App.css */
+
+.level-boost {
+  font-size: 1.5rem;
+  color: #85e0a3;
+  font-weight: bold;
+  margin-left: 8px;
+  vertical-align: super;
+}
+
+.equipped-section {
+  margin-bottom: 30px;
+}
+
+.equipped-section h2 {
+  font-size: 1.2rem;
+  color: var(--accent-gold);
+  border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+  padding-bottom: 10px;
+  margin-bottom: 15px;
+}
+
+.equipped-slots {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.spell-slot {
+  padding: 12px;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 0.95rem;
+  border: 2px dashed #444;
+  color: #666;
+  background-color: rgba(0,0,0,0.2);
+}
+
+.spell-slot.filled {
+  border: 2px solid var(--exp-blue);
+  color: #fff;
+  background-color: rgba(74, 144, 226, 0.1);
+  box-shadow: 0 0 10px rgba(74, 144, 226, 0.2);
+}
+
+.skills-list.interactable .skill-item {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none; /* Prevents text highlighting when tapping quickly on mobile */
+}
+
+.skills-list.interactable .skill-item:active {
+  transform: scale(0.98);
+}
+
+.skill-item.equipped-item {
+  background-color: rgba(74, 144, 226, 0.15);
+  border-left: 4px solid var(--exp-blue);
+  opacity: 0.7;
+}
+
+/* Add to bottom of src/App.css */
+
+.journey-map {
+  margin-bottom: 30px;
+  position: relative;
+  padding: 10px 0 20px 0;
+}
+
+.map-line {
+  position: absolute;
+  top: 25px;
+  left: 20px;
+  right: 20px;
+  height: 4px;
+  background-color: #333;
+  z-index: 1;
+  border-radius: 2px;
+}
+
+.map-progress-fill {
+  height: 100%;
+  background-color: var(--accent-gold);
+  border-radius: 2px;
+  transition: width 0.8s ease-in-out;
+}
+
+.map-nodes {
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+  z-index: 2;
+  padding: 0 10px;
+}
+
+.map-node {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: #1a1a24;
+  border: 3px solid #444;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 0.8rem;
+  color: #666;
+  transition: all 0.3s ease;
+}
+
+.map-node.completed {
+  border-color: var(--accent-gold);
+  background-color: rgba(212, 175, 55, 0.2);
+  color: var(--accent-gold);
+}
+
+.map-node.current {
+  border-color: var(--exp-blue);
+  background-color: var(--exp-blue);
+  color: #fff;
+  transform: scale(1.2);
+  box-shadow: 0 0 10px rgba(74, 144, 226, 0.5);
+}
+
+.map-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  font-size: 0.75rem;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Add to bottom of src/App.css */
+
+.equipped-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+  padding-bottom: 10px;
+  margin-bottom: 15px;
+}
+
+.equipped-header-row h2 {
+  margin: 0;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.inn-btn {
+  background-color: transparent;
+  border: 1px solid #5a7b8c;
+  color: #a2c4e8;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-family: 'Georgia', serif;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.inn-btn:active, .inn-btn:hover {
+  background-color: #5a7b8c;
+  color: #fff;
+}
+
+.inn-message {
+  background-color: rgba(90, 123, 140, 0.2);
+  color: #a2c4e8;
+  padding: 10px;
+  border-radius: 6px;
+  text-align: center;
+  font-style: italic;
+  font-size: 0.9rem;
+  margin-bottom: 15px;
+  animation: fadeIn 0.3s ease-in;
+  border: 1px solid rgba(162, 196, 232, 0.3);
+}
