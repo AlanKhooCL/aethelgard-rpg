@@ -622,3 +622,39 @@ body {
   margin-bottom: 0;
   text-align: left;
 }
+
+/* --- GO TRAIN BUTTON --- */
+
+.profile-details {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+}
+
+.train-btn {
+  display: inline-block;
+  background: linear-gradient(135deg, #4a90e2, #5a7b8c);
+  color: #ffffff;
+  text-decoration: none;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-family: 'Georgia', serif;
+  border: 1px solid #85e0a3;
+  box-shadow: 0 4px 10px rgba(74, 144, 226, 0.3);
+  transition: all 0.2s ease;
+  animation: gentle-float 3s infinite ease-in-out;
+}
+
+.train-btn:active, .train-btn:hover {
+  transform: scale(0.95);
+  box-shadow: 0 0 15px rgba(133, 224, 163, 0.6);
+  background: linear-gradient(135deg, #5a7b8c, #4a90e2);
+  color: #fff;
+}
+
+@keyframes gentle-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}

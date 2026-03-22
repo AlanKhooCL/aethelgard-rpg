@@ -128,16 +128,27 @@ function App() {
       )}
 
       <div className="status-card">
-        {/* NEW: Character Profile Section */}
         <div className="character-profile">
           <div className="character-portrait">
-            {/* Using DiceBear for an auto-generated RPG adventurer avatar */}
             <img src="https://api.dicebear.com/7.x/adventurer/svg?seed=Aethelgard&backgroundColor=transparent" alt="Character Portrait" />
           </div>
-          <div className="level-badge">
-            <span className="level-label">LVL</span>
-            <span className="level-number">{player.level}</span>
-            {equippedSkills.length > 0 && <span className="level-boost">+{equippedSkills.length}</span>}
+          
+          {/* NEW: Wrapper for Level and Train Button */}
+          <div className="profile-details">
+            <div className="level-badge">
+              <span className="level-label">LVL</span>
+              <span className="level-number">{player.level}</span>
+              {equippedSkills.length > 0 && <span className="level-boost">+{equippedSkills.length}</span>}
+            </div>
+            
+            <a 
+              href="https://alankhoocl.github.io/AI-Learning-Management/" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="train-btn"
+            >
+              ✨ Go Train
+            </a>
           </div>
         </div>
 
