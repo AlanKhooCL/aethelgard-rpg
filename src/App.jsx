@@ -15,8 +15,6 @@ function App() {
   const [stageIndex, setStageIndex] = useState(0);
   const [battleMessage, setBattleMessage] = useState("");
   const [equippedSkills, setEquippedSkills] = useState([]);
-  
-  // New state for our Inn mechanic
   const [restMessage, setRestMessage] = useState("");
 
   useEffect(() => {
@@ -65,9 +63,8 @@ function App() {
     }
   };
 
-  // NEW: Inn Rest Logic
   const handleRestAtInn = () => {
-    setEquippedSkills([]); // Clears loadout
+    setEquippedSkills([]);
     setRestMessage("You slept in late. Your mind is clear and your magic is reset.");
     setTimeout(() => setRestMessage(""), 4000);
   };
@@ -131,10 +128,17 @@ function App() {
       )}
 
       <div className="status-card">
-        <div className="level-badge">
-          <span className="level-label">LVL</span>
-          <span className="level-number">{player.level}</span>
-          {equippedSkills.length > 0 && <span className="level-boost">+{equippedSkills.length}</span>}
+        {/* NEW: Character Profile Section */}
+        <div className="character-profile">
+          <div className="character-portrait">
+            {/* Using DiceBear for an auto-generated RPG adventurer avatar */}
+            <img src="https://api.dicebear.com/7.x/adventurer/svg?seed=Aethelgard&backgroundColor=transparent" alt="Character Portrait" />
+          </div>
+          <div className="level-badge">
+            <span className="level-label">LVL</span>
+            <span className="level-number">{player.level}</span>
+            {equippedSkills.length > 0 && <span className="level-boost">+{equippedSkills.length}</span>}
+          </div>
         </div>
 
         <div className="exp-section">
@@ -151,7 +155,6 @@ function App() {
       <div className="equipped-section">
         <div className="equipped-header-row">
           <h2>Prepared Magic ({equippedSkills.length}/3)</h2>
-          {/* NEW: Inn Button */}
           <button className="inn-btn" onClick={handleRestAtInn}>🛌 Rest at Inn</button>
         </div>
         
