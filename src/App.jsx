@@ -131,7 +131,10 @@ function App() {
       <div className="status-card">
         <div className="character-profile">
           <div className="character-portrait">
-            <img src="https://api.dicebear.com/7.x/adventurer/svg?seed=Aethelgard&backgroundColor=transparent" alt="Character Portrait" />
+            <img 
+              src="https://api.dicebear.com/7.x/adventurer/svg?seed=Frieren&backgroundColor=ffffff&mouth=variant01" 
+              alt="Character Portrait" 
+            />
           </div>
           
           <div className="profile-details">
