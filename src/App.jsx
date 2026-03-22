@@ -109,8 +109,7 @@ function App() {
       {!isGameBeaten && (
         <div className="boss-card">
           <div className="boss-header">
-            {/* UPDATED TEXT HERE */}
-            <h2>BOSS ALERT: {currentStage.boss}</h2>
+            <h2>Path Blocked: {currentStage.boss}</h2>
             <span className="boss-level">Req: LVL {currentStage.reqLevel}</span>
           </div>
           <p className="boss-lore">"{currentStage.lore}"</p>
@@ -131,12 +130,10 @@ function App() {
       <div className="status-card">
         <div className="character-profile">
           <div className="character-portrait">
-            <img 
-              src="https://api.dicebear.com/7.x/adventurer/svg?seed=Frieren&backgroundColor=ffffff&mouth=variant01" 
-              alt="Character Portrait" 
-            />
+            <img src="https://api.dicebear.com/7.x/adventurer/svg?seed=Aethelgard&backgroundColor=transparent" alt="Character Portrait" />
           </div>
           
+          {/* NEW: Wrapper for Level and Train Button */}
           <div className="profile-details">
             <div className="level-badge">
               <span className="level-label">LVL</span>
