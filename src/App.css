@@ -625,11 +625,14 @@ body {
 
 /* --- GO TRAIN BUTTON --- */
 
+/* Update these specific classes in src/App.css */
+
 .profile-details {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 5px;
+  flex-direction: row; /* Aligns side-by-side */
+  align-items: center; /* Centers button vertically with level number */
+  gap: 15px;           /* Space between LVL and Button */
+  flex-wrap: wrap;     /* Safety for very small screens */
 }
 
 .train-btn {
@@ -645,6 +648,7 @@ body {
   box-shadow: 0 4px 10px rgba(74, 144, 226, 0.3);
   transition: all 0.2s ease;
   animation: gentle-float 3s infinite ease-in-out;
+  white-space: nowrap; /* Keeps text on one line */
 }
 
 .train-btn:active, .train-btn:hover {
@@ -657,4 +661,11 @@ body {
 @keyframes gentle-float {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-4px); }
+}
+
+/* Adjust Level badge so it doesn't have bottom margin interference */
+.character-profile .level-badge {
+  margin-bottom: 0;
+  display: flex;
+  align-items: baseline;
 }
