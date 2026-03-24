@@ -2,20 +2,18 @@ import { useEffect, useState } from 'react';
 import { fetchAethelgardData } from './api/grimoire';
 import './App.css';
 
-// --- THE PROCEDURAL GENERATION ENGINE ---
 const ADJECTIVES = ["Lingering", "Corrupted", "Frost", "Shadow", "Crimson", "Void", "Astral", "Silent", "Iron", "Ethereal", "Shattered", "Luminous"];
 const NOUNS = ["Phantom", "Golem", "Drake", "Wraith", "Titan", "Behemoth", "Specter", "Guardian", "Warlock", "Chimera", "Leviathan", "Archon"];
 const PLACES = ["Oakhaven", "Spires", "the Northern Pass", "Ende", "the Abyss", "the Sunken City", "the Floating Isles", "the Crystal Wastes", "the Whispering Woods", "the Ashen Peaks"];
 
 const getStageInfo = (index) => {
-  // We use the index to deterministically pick words, so the boss doesn't change if you refresh
   const adj = ADJECTIVES[index % ADJECTIVES.length];
   const noun = NOUNS[(index * 3) % NOUNS.length];
   const place = PLACES[(index * 7) % PLACES.length];
   return {
     town: `Region of ${place}`,
     boss: `The ${adj} ${noun}`,
-    reqLevel: 3 + (index * 4), // The level requirement scales up infinitely by 4 each stage
+    reqLevel: 3 + (index * 4),
     lore: `An ancient anomaly of Tier ${index + 1} blocks the path. Defeat it to advance deeper into the unknown.`
   };
 };
@@ -30,20 +28,22 @@ function App() {
   const [equippedSkills, setEquippedSkills] = useState([]);
   const [restMessage, setRestMessage] = useState("");
 
-  // --- BATTLE & MINI-GAME STATES ---
+  // --- BATTLE, MINI-GAME & CINEMATIC STATES ---
   const [isBattling, setIsBattling] = useState(false);
-  const [battleType, setBattleType] = useState('memory'); // 'memory' or 'sequence'
+  const [battleType, setBattleType] = useState('memory');
   const [timeLeft, setTimeLeft] = useState(0);
-  const [gameStatus, setGameStatus] = useState('idle'); // idle, playing, won, lost
-
-  // Memory Game State
+  const [gameStatus, setGameStatus] = useState('idle');
+  
   const [cards, setCards] = useState([]);
   const [flippedIndices, setFlippedIndices] = useState([]);
-
-  // Sequence Game State
+  
   const [sequence, setSequence] = useState([]);
   const [playerSequence, setPlayerSequence] = useState([]);
-  const [sequencePhase, setSequencePhase] = useState('showing'); // 'showing' or 'input'
+  const [sequencePhase, setSequencePhase] = useState('showing');
+  
+  const [runeFeedback, setRuneFeedback] = useState(null); // { rune: '🔮', status: 'correct' | 'wrong' }
+  const [isResting, setIsResting] = useState(false);
+  const [isVictoryFlashing, setIsVictoryFlashing] = useState(false);
 
   useEffect(() => {
     const savedStage = localStorage.getItem('aethelgard_stage');
@@ -67,12 +67,10 @@ function App() {
   const effectiveLevel = player.level + equippedSkills.length;
   const currentStage = getStageInfo(stageIndex);
 
-  // --- START THE RANDOMIZED BATTLE ---
   const startBattle = () => {
     const diff = currentStage.reqLevel - effectiveLevel;
     const isUnderleveled = diff > 0;
     
-    // 50/50 chance to get either mini-game
     const chosenGame = Math.random() > 0.5 ? 'memory' : 'sequence';
     setBattleType(chosenGame);
     setGameStatus('playing');
@@ -91,9 +89,8 @@ function App() {
       setFlippedIndices([]);
       setTimeLeft(initialTime);
     } else {
-      // Setup Sequence Game
       const seqLength = isUnderleveled ? 6 : 4;
-      const initialTime = isUnderleveled ? Math.max(10, 20 - diff) : 30; // Time to input
+      const initialTime = isUnderleveled ? Math.max(10, 20 - diff) : 30;
       
       const newSeq = Array.from({length: seqLength}, () => SPELL_RUNES[Math.floor(Math.random() * SPELL_RUNES.length)]);
       setSequence(newSeq);
@@ -101,14 +98,12 @@ function App() {
       setSequencePhase('showing');
       setTimeLeft(initialTime);
 
-      // Give player 3 seconds to memorize the sequence before hiding it
       setTimeout(() => {
         if (isBattling) setSequencePhase('input');
       }, 3000);
     }
   };
 
-  // --- MEMORY GAME LOGIC ---
   const handleCardClick = (index) => {
     if (battleType !== 'memory' || gameStatus !== 'playing') return;
     if (flippedIndices.length === 2 || cards[index].isFlipped || cards[index].isMatched) return;
@@ -144,35 +139,32 @@ function App() {
     }
   };
 
-  // --- SEQUENCE GAME LOGIC ---
   const handleRuneClick = (rune) => {
     if (battleType !== 'sequence' || sequencePhase !== 'input' || gameStatus !== 'playing') return;
     
     const newPlayerSeq = [...playerSequence, rune];
     setPlayerSequence(newPlayerSeq);
-    
     const currentIndex = newPlayerSeq.length - 1;
     
-    // Check if the rune casted was wrong
     if (newPlayerSeq[currentIndex] !== sequence[currentIndex]) {
+      setRuneFeedback({ rune, status: 'wrong' });
       setGameStatus('lost');
       setTimeout(() => closeBattle("Defeat... You cast the wrong rune."), 2000);
       return;
     }
     
-    // Check if the whole sequence is complete
+    setRuneFeedback({ rune, status: 'correct' });
+    setTimeout(() => setRuneFeedback(null), 300);
+
     if (newPlayerSeq.length === sequence.length) {
       setGameStatus('won');
       handleWin();
     }
   };
 
-  // Timer logic for both games
   useEffect(() => {
     if (isBattling && gameStatus === 'playing' && timeLeft > 0) {
-      // If sequence game is in 'showing' phase, freeze the timer
       if (battleType === 'sequence' && sequencePhase === 'showing') return;
-      
       const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
       return () => clearTimeout(timer);
     } else if (timeLeft === 0 && gameStatus === 'playing') {
@@ -182,10 +174,14 @@ function App() {
   }, [timeLeft, isBattling, gameStatus, battleType, sequencePhase]);
 
   const handleWin = () => {
-    const nextStage = stageIndex + 1;
-    setStageIndex(nextStage);
-    localStorage.setItem('aethelgard_stage', nextStage);
-    setTimeout(() => closeBattle(`Victory! Your magic dismantled ${currentStage.boss}.`), 2000);
+    setIsVictoryFlashing(true);
+    setTimeout(() => {
+      const nextStage = stageIndex + 1;
+      setStageIndex(nextStage);
+      localStorage.setItem('aethelgard_stage', nextStage);
+      setIsVictoryFlashing(false);
+      closeBattle(`Victory! Your magic dismantled ${currentStage.boss}.`);
+    }, 1200);
   };
 
   const closeBattle = (message) => {
@@ -208,9 +204,13 @@ function App() {
   };
 
   const handleRestAtInn = () => {
-    setEquippedSkills([]);
-    setRestMessage("You slept in late. Your mind is clear and your magic is reset.");
-    setTimeout(() => setRestMessage(""), 4000);
+    setIsResting(true);
+    setTimeout(() => {
+      setEquippedSkills([]);
+      setRestMessage("The night passes... Your mind is clear and your magic is reset.");
+      setIsResting(false);
+    }, 1500);
+    setTimeout(() => setRestMessage(""), 5500);
   };
 
   const baseExpForCurrentLevel = Math.pow(player.level - 1, 2) * 100;
@@ -219,7 +219,6 @@ function App() {
 
   if (isLoading) return <div className="loading-screen">Reading the ancient texts...</div>;
 
-  // Generate an endless map view showing the previous, current, and next 2 stages
   const mapNodes = [];
   for (let i = Math.max(0, stageIndex - 1); i <= stageIndex + 2; i++) {
     mapNodes.push(i);
@@ -228,12 +227,17 @@ function App() {
   return (
     <div className="rpg-container">
       
-      {/* --- MULTI-GAME BATTLE OVERLAY --- */}
+      {/* CINEMATIC OVERLAYS */}
+      {isResting && <div className="fade-to-black-overlay"></div>}
+      {isVictoryFlashing && <div className="victory-flash-overlay"></div>}
+
       {isBattling && (
         <div className="battle-overlay">
           <div className="battle-modal">
             <div className="battle-stats">
-              <span>Time: <strong style={{ color: timeLeft <= 5 ? '#ff9999' : 'inherit' }}>{timeLeft}s</strong></span>
+              <span className={`timer ${timeLeft <= 5 ? 'panic' : timeLeft <= 15 ? 'warning' : ''}`}>
+                ⏳ {timeLeft}s
+              </span>
               <button className="flee-btn" onClick={() => closeBattle("You fled the encounter.")}>Flee</button>
             </div>
             
@@ -265,11 +269,14 @@ function App() {
                 </div>
                 {sequencePhase === 'input' && (
                   <div className="sequence-keypad">
-                    {SPELL_RUNES.map(rune => (
-                      <button key={rune} className="rune-btn" onClick={() => handleRuneClick(rune)}>
-                        {rune}
-                      </button>
-                    ))}
+                    {SPELL_RUNES.map(rune => {
+                      const feedbackClass = runeFeedback?.rune === rune ? `feedback-${runeFeedback.status}` : '';
+                      return (
+                        <button key={rune} className={`rune-btn ${feedbackClass}`} onClick={() => handleRuneClick(rune)}>
+                          {rune}
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -283,7 +290,6 @@ function App() {
         <p className="subtitle">Location: {currentStage.town}</p>
       </header>
 
-      {/* --- ENDLESS SCROLLING MAP --- */}
       <div className="journey-map endless-map">
         <div className="map-line"></div>
         <div className="map-nodes">
@@ -291,7 +297,7 @@ function App() {
             const isCompleted = nodeIndex < stageIndex;
             const isCurrent = nodeIndex === stageIndex;
             return (
-              <div key={nodeIndex} className="map-node-container">
+              <div key={nodeIndex} className="map-node-container" title={`Tier ${nodeIndex + 1}`}>
                 <div className={`map-node ${isCompleted ? 'completed' : ''} ${isCurrent ? 'current' : ''}`}>
                   {isCompleted ? '✓' : isCurrent ? '🚶' : '•'}
                 </div>
@@ -304,11 +310,11 @@ function App() {
 
       <div className="boss-card">
         <div className="boss-header">
-          <h2>BOSS ALERT: {currentStage.boss}</h2>
+          <h2 className="boss-name">BOSS ALERT: {currentStage.boss}</h2>
           <span className="boss-level">Req: LVL {currentStage.reqLevel}</span>
         </div>
         <p className="boss-lore">"{currentStage.lore}"</p>
-        <button className="challenge-btn" onClick={startBattle}>Attempt to Dispel Magic</button>
+        <button className="challenge-btn" onClick={startBattle}>Engage the Anomaly</button>
         {battleMessage && (
           <div className={`battle-message ${battleMessage.includes('Victory') ? 'victory' : 'defeat'}`}>{battleMessage}</div>
         )}
@@ -354,15 +360,20 @@ function App() {
 
         <div className="equipped-slots">
           {[0, 1, 2].map(slotIndex => (
-            <div key={slotIndex} className={`spell-slot ${equippedSkills[slotIndex] ? 'filled' : 'empty'}`}>
-              {equippedSkills[slotIndex] ? `✨ ${equippedSkills[slotIndex]}` : 'Empty Slot'}
+            <div key={slotIndex} className={`spell-slot spell-card ${equippedSkills[slotIndex] ? 'filled' : 'empty'}`}>
+              {equippedSkills[slotIndex] ? (
+                <>
+                  <span className="spell-icon">✨</span>
+                  <span className="spell-name">{equippedSkills[slotIndex]}</span>
+                </>
+              ) : 'Empty Slot'}
             </div>
           ))}
         </div>
       </div>
 
       <div className="skills-section">
-        <h2>Grimoire of Skills (Tap to Equip)</h2>
+        <h2>Grimoire of Skills</h2>
         {player.skills.length > 0 ? (
           <ul className="skills-list interactable">
             {player.skills.map((skill, index) => {
