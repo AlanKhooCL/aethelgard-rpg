@@ -2,30 +2,46 @@ import { useEffect, useState, useRef } from 'react';
 import { fetchAethelgardData } from './api/grimoire';
 import './App.css';
 
-// --- ENDLESS WORLD DATA ---
-const ADJECTIVES = ["Lingering", "Corrupted", "Frost", "Shadow", "Crimson", "Void", "Astral", "Silent", "Iron", "Ethereal", "Shattered", "Luminous"];
-const NOUNS = ["Phantom", "Golem", "Drake", "Wraith", "Titan", "Behemoth", "Specter", "Guardian", "Warlock", "Chimera", "Leviathan", "Archon"];
-const PLACES = ["Oakhaven", "Spires", "the Northern Pass", "Ende", "the Abyss", "the Sunken City", "the Floating Isles", "the Crystal Wastes", "the Whispering Woods", "the Ashen Peaks"];
+// --- HARRY POTTER ENDLESS WORLD DATA ---
+const ADJECTIVES = ["Cursed", "Forbidden", "Spectral", "Shadowy", "Bewitched", "Jinxed", "Hexed", "Dark", "Rogue", "Venomous", "Ancient", "Fierce"];
+const NOUNS = ["Boggart", "Dementor", "Basilisk", "Acromantula", "Death Eater", "Troll", "Werewolf", "Grindylow", "Lethifold", "Horcrux", "Dragon", "Kelpie"];
+const PLACES = ["the Forbidden Forest", "the Chamber of Secrets", "Azkaban", "the Shrieking Shack", "the Black Lake", "Knockturn Alley", "the Department of Mysteries", "Malfoy Manor", "the Room of Requirement", "the Whomping Willow"];
 
 const getStageInfo = (index) => {
   const adj = ADJECTIVES[index % ADJECTIVES.length];
   const noun = NOUNS[(index * 3) % NOUNS.length];
   const place = PLACES[(index * 7) % PLACES.length];
   return {
-    town: `Region of ${place}`,
+    town: `Location: ${place}`,
     boss: `The ${adj} ${noun}`,
     reqLevel: 3 + (index * 4),
-    lore: `An ancient anomaly blocks the path. Your stats must exceed its power.`
+    lore: `A dark anomaly blocks the path. Your magical prowess must exceed its power.`
   };
 };
 
-// --- DIGIVICE EVOLUTION STAGES ---
+// --- HOGWARTS EVOLUTION STAGES ---
 const getCharacterEvolution = (level) => {
-  if (level < 5) return { stage: "In-Training", sprite: "🌱", title: "Mana Sprout" };
-  if (level < 10) return { stage: "Rookie", sprite: "🧚", title: "Forest Sprite" };
-  if (level < 15) return { stage: "Champion", sprite: "🧙", title: "Adept Caster" };
-  if (level < 20) return { stage: "Ultimate", sprite: "🧝", title: "High Elf" };
-  return { stage: "Mega", sprite: "👼", title: "Ascended Archon" };
+  if (level < 5) return { stage: "First-Year", sprite: "🪶", title: "Novice Spellcaster" };
+  if (level < 10) return { stage: "Fifth-Year", sprite: "🦉", title: "O.W.L. Student" };
+  if (level < 15) return { stage: "Prefect", sprite: "🪄", title: "Skilled Duelist" };
+  if (level < 20) return { stage: "Auror", sprite: "⚡", title: "Dark Wizard Catcher" };
+  return { stage: "Order Member", sprite: "🦡", title: "Champion of Hufflepuff" };
+};
+
+// --- THE GACHA POOL (Tech/Magic Themed) ---
+const SKILL_POOL = {
+  common: [
+    { name: "Syntax Strike", power: 1, icon: "⚔️" }, { name: "Variable Shield", power: 1, icon: "🛡️" }, { name: "Loop Slash", power: 1, icon: "🔁" }, { name: "Console.log()", power: 1, icon: "👁️" }
+  ],
+  rare: [
+    { name: "Array Barrage", power: 2, icon: "🧊" }, { name: "SQL Query", power: 2, icon: "🔍" }, { name: "Git Checkout", power: 2, icon: "🌿" }, { name: "Boolean Aura", power: 2, icon: "⚡" }
+  ],
+  epic: [
+    { name: "Recursive Blast", power: 3, icon: "🌀" }, { name: "API Invocation", power: 3, icon: "🔗" }, { name: "Data Pipeline", power: 3, icon: "🌊" }, { name: "Regex Void", power: 3, icon: "🌌" }
+  ],
+  legendary: [
+    { name: "Neural Network", power: 5, icon: "🧠" }, { name: "Sudo Root Access", power: 5, icon: "👑" }, { name: "Cloud Infrastructure", power: 5, icon: "🌩️" }, { name: "Omniscient AI", power: 5, icon: "🤖" }
+  ]
 };
 
 function App() {
@@ -33,12 +49,20 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [stageIndex, setStageIndex] = useState(0);
   const [battleMessage, setBattleMessage] = useState("");
-  const [equippedSkills, setEquippedSkills] = useState([]);
   const [restMessage, setRestMessage] = useState("");
+
+  // --- MENU STATE ---
+  const [activeMenu, setActiveMenu] = useState(null); // 'boss', 'equipped', or 'gacha'
+
+  // --- GACHA INVENTORY STATES ---
+  const [gachaInventory, setGachaInventory] = useState([]);
+  const [equippedIds, setEquippedIds] = useState([]);
+  const [totalRolls, setTotalRolls] = useState(0);
+  const [summonMessage, setSummonMessage] = useState("");
 
   // --- AUTO-BATTLER STATES ---
   const [isBattling, setIsBattling] = useState(false);
-  const [combatStatus, setCombatStatus] = useState('idle'); // idle, fighting, won, lost
+  const [combatStatus, setCombatStatus] = useState('idle');
   const [playerHp, setPlayerHp] = useState(0);
   const [maxPlayerHp, setMaxPlayerHp] = useState(0);
   const [bossHp, setBossHp] = useState(0);
@@ -47,12 +71,18 @@ function App() {
   
   const logContainerRef = useRef(null);
 
-  // Load Data
   useEffect(() => {
     const savedStage = localStorage.getItem('aethelgard_stage');
     if (savedStage) setStageIndex(parseInt(savedStage, 10));
-    const savedSkills = localStorage.getItem('aethelgard_equipped');
-    if (savedSkills) setEquippedSkills(JSON.parse(savedSkills));
+    
+    const savedInventory = localStorage.getItem('aethelgard_gacha_inv');
+    if (savedInventory) setGachaInventory(JSON.parse(savedInventory));
+    
+    const savedEquipped = localStorage.getItem('aethelgard_equipped_ids');
+    if (savedEquipped) setEquippedIds(JSON.parse(savedEquipped));
+    
+    const savedRolls = localStorage.getItem('aethelgard_rolls');
+    if (savedRolls) setTotalRolls(parseInt(savedRolls, 10));
 
     const loadData = async () => {
       const data = await fetchAethelgardData();
@@ -62,23 +92,71 @@ function App() {
     loadData();
   }, []);
 
-  // Save equipped skills
   useEffect(() => {
-    localStorage.setItem('aethelgard_equipped', JSON.stringify(equippedSkills));
-  }, [equippedSkills]);
+    localStorage.setItem('aethelgard_gacha_inv', JSON.stringify(gachaInventory));
+    localStorage.setItem('aethelgard_equipped_ids', JSON.stringify(equippedIds));
+    localStorage.setItem('aethelgard_rolls', totalRolls.toString());
+  }, [gachaInventory, equippedIds, totalRolls]);
 
-  // Auto-scroll combat log
   useEffect(() => {
     if (logContainerRef.current) {
       logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
     }
   }, [combatLog]);
 
-  const effectiveLevel = player.level + equippedSkills.length;
+  const manaCrystals = Math.max(0, player.completedChaptersCount - totalRolls);
+  const equippedSkills = gachaInventory.filter(skill => equippedIds.includes(skill.id));
+  const skillBonusLevel = equippedSkills.reduce((sum, skill) => sum + skill.power, 0);
+  
+  const effectiveLevel = player.level + skillBonusLevel;
   const currentStage = getStageInfo(stageIndex);
   const character = getCharacterEvolution(effectiveLevel);
 
-  // --- COMBAT INITIALIZATION ---
+  const toggleMenu = (menu) => {
+    setActiveMenu(activeMenu === menu ? null : menu);
+  };
+
+  const handleSummon = () => {
+    if (manaCrystals <= 0) {
+      setSummonMessage("Not enough Crystals. Complete chapters!");
+      setTimeout(() => setSummonMessage(""), 3000);
+      return;
+    }
+
+    const roll = Math.random() * 100;
+    let tier = 'common';
+    if (roll < 5) tier = 'legendary';
+    else if (roll < 15) tier = 'epic';
+    else if (roll < 40) tier = 'rare';
+
+    const pool = SKILL_POOL[tier];
+    const pulledSkill = pool[Math.floor(Math.random() * pool.length)];
+    const newSkill = { ...pulledSkill, tier, id: Date.now().toString() };
+
+    setGachaInventory(prev => [newSkill, ...prev]);
+    setTotalRolls(prev => prev + 1);
+    
+    setSummonMessage(`Pulled ${tier.toUpperCase()}: ${newSkill.name}!`);
+    setTimeout(() => setSummonMessage(""), 4000);
+  };
+
+  const toggleEquipSkill = (id) => {
+    if (equippedIds.includes(id)) {
+      setEquippedIds(equippedIds.filter(equippedId => equippedId !== id));
+    } else if (equippedIds.length < 3) {
+      setEquippedIds([...equippedIds, id]);
+    } else {
+      setBattleMessage("You can only equip 3 spells at a time.");
+      setTimeout(() => setBattleMessage(""), 3000);
+    }
+  };
+
+  const handleRestAtInn = () => {
+    setEquippedIds([]);
+    setRestMessage("You rested in the common room. Spells reset.");
+    setTimeout(() => setRestMessage(""), 4000);
+  };
+
   const startBattle = () => {
     const pMaxHp = effectiveLevel * 25 + 50;
     const bMaxHp = currentStage.reqLevel * 30 + 50;
@@ -93,25 +171,20 @@ function App() {
     setIsBattling(true);
   };
 
-  // --- AUTO-BATTLER TURN LOOP ---
   useEffect(() => {
     if (combatStatus !== 'fighting') return;
 
     const timer = setTimeout(() => {
-      // 1. Calculate Player Damage
-      const basePlayerDmg = effectiveLevel * 5 + (equippedSkills.length * 8);
+      const basePlayerDmg = effectiveLevel * 5 + (skillBonusLevel * 10);
       const playerDmg = Math.floor(basePlayerDmg + Math.random() * 10);
       const newBossHp = Math.max(0, bossHp - playerDmg);
 
-      // 2. Calculate Boss Damage
       const baseBossDmg = currentStage.reqLevel * 6;
       const bossDmg = Math.floor(baseBossDmg + Math.random() * 15);
       const newPlayerHp = Math.max(0, playerHp - bossDmg);
 
-      // 3. Update State
       setBossHp(newBossHp);
       
-      // If boss dies before it hits back
       if (newBossHp <= 0) {
         setCombatLog(prev => [...prev, `💥 You dealt ${playerDmg} DMG!`, `🏆 ${currentStage.boss} has been defeated!`]);
         setCombatStatus('won');
@@ -121,29 +194,28 @@ function App() {
 
       setPlayerHp(newPlayerHp);
       
-      // Update Log for full exchange
       setCombatLog(prev => [
         ...prev, 
-        `⚔️ You strike for ${playerDmg} DMG!`, 
-        `🩸 Boss hits back for ${bossDmg} DMG!`
+        `🪄 You cast a spell for ${playerDmg} DMG!`, 
+        `🩸 Enemy strikes back for ${bossDmg} DMG!`
       ]);
 
-      // If player dies
       if (newPlayerHp <= 0) {
         setCombatStatus('lost');
-        setTimeout(() => closeBattle("Your character fainted. You need to train and level up more!"), 3000);
+        setTimeout(() => closeBattle("You were defeated. Time to study and level up!"), 3000);
       }
 
-    }, 1200); // Trade blows every 1.2 seconds
+    }, 1200);
 
     return () => clearTimeout(timer);
-  }, [combatStatus, playerHp, bossHp, effectiveLevel, currentStage, equippedSkills]);
+  }, [combatStatus, playerHp, bossHp, effectiveLevel, skillBonusLevel, currentStage]);
 
   const handleWin = () => {
     const nextStage = stageIndex + 1;
     setStageIndex(nextStage);
     localStorage.setItem('aethelgard_stage', nextStage);
-    closeBattle(`Victory! You advance deeper into the unknown.`);
+    closeBattle(`Victory! You advance further into the darkness.`);
+    setActiveMenu(null); // Close boss panel after win
   };
 
   const closeBattle = (message) => {
@@ -154,34 +226,11 @@ function App() {
     }
   };
 
-  // --- GENERAL ACTIONS ---
-  const toggleEquipSkill = (skill) => {
-    if (equippedSkills.includes(skill)) {
-      setEquippedSkills(equippedSkills.filter(s => s !== skill));
-    } else if (equippedSkills.length < 3) {
-      setEquippedSkills([...equippedSkills, skill]);
-    } else {
-      setBattleMessage("You can only equip 3 spells at a time.");
-      setTimeout(() => setBattleMessage(""), 3000);
-    }
-  };
-
-  const handleRestAtInn = () => {
-    setEquippedSkills([]);
-    setRestMessage("Your companion rested. Magic capacity reset.");
-    setTimeout(() => setRestMessage(""), 4000);
-  };
-
   const baseExpForCurrentLevel = Math.pow(player.level - 1, 2) * 100;
   const baseExpForNextLevel = Math.pow(player.level, 2) * 100;
   const progressPercentage = Math.min(((player.exp - baseExpForCurrentLevel) / (baseExpForNextLevel - baseExpForCurrentLevel)) * 100, 100);
 
-  if (isLoading) return <div className="loading-screen">Booting Digivice...</div>;
-
-  const mapNodes = [];
-  for (let i = Math.max(0, stageIndex - 1); i <= stageIndex + 2; i++) {
-    mapNodes.push(i);
-  }
+  if (isLoading) return <div className="loading-screen">Booting Wizarding Device...</div>;
 
   return (
     <div className="rpg-container">
@@ -190,7 +239,7 @@ function App() {
       {isBattling && (
         <div className="battle-overlay">
           <div className="battle-modal digivice-battle">
-            <h2 className="battle-title">COMBAT ENGAGED</h2>
+            <h2 className="battle-title">DUEL ENGAGED</h2>
             
             <div className="health-bar-container">
               <div className="hp-header">
@@ -205,7 +254,7 @@ function App() {
             <div className="battle-sprites">
               <div className={`battle-sprite ${combatStatus === 'fighting' ? 'attacking-left' : ''}`}>{character.sprite}</div>
               <div className="vs-badge">VS</div>
-              <div className={`battle-sprite boss-sprite ${combatStatus === 'fighting' ? 'attacking-right' : ''}`}>👹</div>
+              <div className={`battle-sprite boss-sprite ${combatStatus === 'fighting' ? 'attacking-right' : ''}`}>☠️</div>
             </div>
 
             <div className="health-bar-container">
@@ -220,7 +269,7 @@ function App() {
 
             <div className="combat-log" ref={logContainerRef}>
               {combatLog.map((log, index) => (
-                <div key={index} className={`log-entry ${log.includes('You strike') ? 'log-player' : log.includes('Boss hits') ? 'log-boss' : 'log-system'}`}>
+                <div key={index} className={`log-entry ${log.includes('You cast') ? 'log-player' : log.includes('Enemy strikes') ? 'log-boss' : 'log-system'}`}>
                   {log}
                 </div>
               ))}
@@ -237,20 +286,20 @@ function App() {
       )}
 
       <header className="game-header">
-        <h1>Traveler of Aethelgard</h1>
-        <p className="subtitle">Location: {currentStage.town}</p>
+        <h1>Tracker of Magic</h1>
+        <p className="subtitle">{currentStage.town}</p>
       </header>
 
       {/* --- DIGIVICE VIRTUAL PET PROFILE --- */}
       <div className="digivice-container">
+        
         <div className="digivice-screen">
           <div className="digivice-sprite idle-bounce">{character.sprite}</div>
           <div className="digivice-stats">
             <div className="digivice-stage">{character.stage}</div>
             <div className="digivice-name">{character.title}</div>
-            <div className="digivice-level">LVL {player.level} {equippedSkills.length > 0 && `(+${equippedSkills.length})`}</div>
+            <div className="digivice-level">LVL {player.level} {skillBonusLevel > 0 && `(+${skillBonusLevel})`}</div>
             
-            {/* NEW LCD-STYLED EXP BAR */}
             <div className="lcd-exp-container">
               <div className="lcd-exp-labels">
                 <span>EXP</span>
@@ -260,110 +309,132 @@ function App() {
                 <div className="lcd-exp-fill" style={{ width: `${progressPercentage}%` }}></div>
               </div>
             </div>
-
           </div>
         </div>
+
         <div className="digivice-actions">
            <a href="https://alankhoocl.github.io/AI-Learning-Management/" target="_blank" rel="noopener noreferrer" className="train-btn">
-              ⚙️ Go Train
+              📚 Go Study
             </a>
         </div>
-      </div>
 
-      <div className="journey-map endless-map">
-        <div className="map-line"></div>
-        <div className="map-nodes">
-          {mapNodes.map((nodeIndex) => {
-            const isCompleted = nodeIndex < stageIndex;
-            const isCurrent = nodeIndex === stageIndex;
-            return (
-              <div key={nodeIndex} className="map-node-container">
-                <div className={`map-node ${isCompleted ? 'completed' : ''} ${isCurrent ? 'current' : ''}`}>
-                  {isCompleted ? '✓' : isCurrent ? '🚶' : '•'}
-                </div>
-                {/* TIER LABELS HAVE BEEN REMOVED */}
-              </div>
-            );
-          })}
+        {/* --- EXPANDABLE MENU BUTTONS --- */}
+        <div className="digivice-menu">
+          <button 
+            className={`menu-btn ${activeMenu === 'boss' ? 'active' : ''}`} 
+            onClick={() => toggleMenu('boss')}
+            title="Boss Encounter"
+          >
+            ☠️
+          </button>
+          <button 
+            className={`menu-btn ${activeMenu === 'equipped' ? 'active' : ''}`} 
+            onClick={() => toggleMenu('equipped')}
+            title="Prepared Magic"
+          >
+            🪄
+          </button>
+          <button 
+            className={`menu-btn ${activeMenu === 'gacha' ? 'active' : ''}`} 
+            onClick={() => toggleMenu('gacha')}
+            title="Grimoire of Skills"
+          >
+            📜
+          </button>
         </div>
       </div>
 
-      <div className="boss-card">
-        <div className="boss-header">
-          <h2 className="boss-name">BOSS ALERT: {currentStage.boss}</h2>
-          <span className="boss-level">Req: LVL {currentStage.reqLevel}</span>
+      {/* --- EXPANDABLE SECTIONS --- */}
+      
+      {activeMenu === 'boss' && (
+        <div className="panel-section boss-card fade-in">
+          <div className="boss-header">
+            <h2 className="boss-name">THREAT: {currentStage.boss}</h2>
+            <span className="boss-level">Req: LVL {currentStage.reqLevel}</span>
+          </div>
+          <p className="boss-lore">"{currentStage.lore}"</p>
+          <button className="challenge-btn" onClick={startBattle}>Engage Duel</button>
+          {battleMessage && (
+            <div className={`battle-message ${battleMessage.includes('Victory') ? 'victory' : 'defeat'}`}>{battleMessage}</div>
+          )}
         </div>
-        <p className="boss-lore">"{currentStage.lore}"</p>
-        <button className="challenge-btn" onClick={startBattle}>Engage Auto-Battle</button>
-        {battleMessage && (
-          <div className={`battle-message ${battleMessage.includes('Victory') ? 'victory' : 'defeat'}`}>{battleMessage}</div>
-        )}
-      </div>
+      )}
 
-      <div className="equipped-section">
-        <div className="equipped-header-row">
-          <h2>Prepared Magic ({equippedSkills.length}/3)</h2>
-          <button className="inn-btn" onClick={handleRestAtInn}>🛌 Rest</button>
-        </div>
-        
-        {restMessage && <div className="inn-message">{restMessage}</div>}
+      {activeMenu === 'equipped' && (
+        <div className="panel-section equipped-section fade-in">
+          <div className="equipped-header-row">
+            <h2>Prepared Spells ({equippedIds.length}/3)</h2>
+            <button className="inn-btn" onClick={handleRestAtInn}>🛌 Rest</button>
+          </div>
+          {restMessage && <div className="inn-message">{restMessage}</div>}
 
-        <div className="equipped-slots">
-          {[0, 1, 2].map(slotIndex => (
-            <div key={slotIndex} className={`spell-slot spell-card ${equippedSkills[slotIndex] ? 'filled' : 'empty'}`}>
-              {equippedSkills[slotIndex] ? (
-                <>
-                  <span className="spell-icon">✨</span>
-                  <span className="spell-name">{equippedSkills[slotIndex]}</span>
-                </>
-              ) : 'Empty Slot'}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="skills-section">
-        <h2>Grimoire of Skills</h2>
-        {player.skills.length > 0 ? (
-          <ul className="skills-list interactable">
-            {player.skills.map((skill, index) => {
-              const isEquipped = equippedSkills.includes(skill);
+          <div className="equipped-slots">
+            {[0, 1, 2].map(slotIndex => {
+              const skill = equippedSkills[slotIndex];
               return (
-                <li key={index} className={`skill-item ${isEquipped ? 'equipped-item' : ''}`} onClick={() => toggleEquipSkill(skill)}>
-                  <span className="skill-icon">{isEquipped ? '🔮' : '📖'}</span>
-                  {skill}
-                </li>
+                <div key={slotIndex} className={`spell-slot spell-card ${skill ? `filled tier-${skill.tier}` : 'empty'}`}>
+                  {skill ? (
+                    <>
+                      <span className="spell-icon">{skill.icon}</span>
+                      <div className="spell-details">
+                        <span className="spell-name">{skill.name}</span>
+                        <span className="spell-power">PWR +{skill.power}</span>
+                      </div>
+                    </>
+                  ) : 'Empty Slot'}
+                </div>
               );
             })}
-          </ul>
-        ) : (
-          <p className="empty-state">Your grimoire is empty. Complete a Course to unlock magic.</p>
-        )}
-      </div>
-
-      <div className="quests-section">
-        <h2>Active Quests</h2>
-        {player.quests.length > 0 ? (
-          <div className="quest-groups-container">
-            {player.quests.map((group, index) => (
-              <div key={index} className="quest-group">
-                <h3 className="course-title-header">📜 {group.courseTitle}</h3>
-                <ul className="quest-list">
-                  {group.chapters.map((quest, qIndex) => (
-                    <li key={qIndex} className="quest-item">
-                      <div className="quest-header">
-                        <span className="quest-title">{quest.title}</span>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
           </div>
-        ) : (
-          <p className="empty-state">No active quests.</p>
-        )}
-      </div>
+        </div>
+      )}
+
+      {activeMenu === 'gacha' && (
+        <div className="panel-section gacha-section fade-in">
+          <div className="gacha-header">
+            <h2>Grimoire Summoning</h2>
+            <div className="crystal-count">💎 {manaCrystals} Crystals</div>
+          </div>
+          <p className="gacha-lore">Earn crystals by completing chapters in your Learning Center.</p>
+          
+          <button 
+            className={`summon-btn ${manaCrystals > 0 ? 'active' : 'disabled'}`} 
+            onClick={handleSummon}
+            disabled={manaCrystals <= 0}
+          >
+            Summon Spell (1 💎)
+          </button>
+          
+          {summonMessage && (
+            <div className={`summon-message ${summonMessage.includes('LEGENDARY') ? 'legendary-pull' : ''}`}>
+              {summonMessage}
+            </div>
+          )}
+
+          <div className="inventory-grid">
+            {gachaInventory.length > 0 ? (
+              gachaInventory.map((skill) => {
+                const isEquipped = equippedIds.includes(skill.id);
+                return (
+                  <div 
+                    key={skill.id} 
+                    className={`inventory-item tier-${skill.tier} ${isEquipped ? 'equipped-item' : ''}`} 
+                    onClick={() => toggleEquipSkill(skill.id)}
+                  >
+                    <span className="inv-icon">{skill.icon}</span>
+                    <span className="inv-name">{skill.name}</span>
+                    <span className="inv-power">+{skill.power}</span>
+                    {isEquipped && <div className="equipped-badge">E</div>}
+                  </div>
+                );
+              })
+            ) : (
+              <p className="empty-state">No spells acquired yet. Summon to begin.</p>
+            )}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
