@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { fetchAethelgardData } from './api/grimoire';
 import './App.css';
 
+// --- ENDLESS WORLD DATA ---
 const ADJECTIVES = ["Lingering", "Corrupted", "Frost", "Shadow", "Crimson", "Void", "Astral", "Silent", "Iron", "Ethereal", "Shattered", "Luminous"];
 const NOUNS = ["Phantom", "Golem", "Drake", "Wraith", "Titan", "Behemoth", "Specter", "Guardian", "Warlock", "Chimera", "Leviathan", "Archon"];
 const PLACES = ["Oakhaven", "Spires", "the Northern Pass", "Ende", "the Abyss", "the Sunken City", "the Floating Isles", "the Crystal Wastes", "the Whispering Woods", "the Ashen Peaks"];
@@ -14,11 +15,18 @@ const getStageInfo = (index) => {
     town: `Region of ${place}`,
     boss: `The ${adj} ${noun}`,
     reqLevel: 3 + (index * 4),
-    lore: `An ancient anomaly of Tier ${index + 1} blocks the path. Defeat it to advance deeper into the unknown.`
+    lore: `An anomaly of Tier ${index + 1} blocks the path. Your stats must exceed its power.`
   };
 };
 
-const SPELL_RUNES = ['🔮', '📜', '⚔️', '🛡️', '🌿', '💎', '🌙', '✨'];
+// --- DIGIVICE EVOLUTION STAGES ---
+const getCharacterEvolution = (level) => {
+  if (level < 5) return { stage: "In-Training", sprite: "🌱", title: "Mana Sprout" };
+  if (level < 10) return { stage: "Rookie", sprite: "🧚", title: "Forest Sprite" };
+  if (level < 15) return { stage: "Champion", sprite: "🧙", title: "Adept Caster" };
+  if (level < 20) return { stage: "Ultimate", sprite: "🧝", title: "High Elf" };
+  return { stage: "Mega", sprite: "👼", title: "Ascended Archon" };
+};
 
 function App() {
   const [player, setPlayer] = useState({ level: 1, exp: 0, skills: [], completedChaptersCount: 0, quests: [] });
@@ -28,27 +36,21 @@ function App() {
   const [equippedSkills, setEquippedSkills] = useState([]);
   const [restMessage, setRestMessage] = useState("");
 
-  // --- BATTLE, MINI-GAME & CINEMATIC STATES ---
+  // --- AUTO-BATTLER STATES ---
   const [isBattling, setIsBattling] = useState(false);
-  const [battleType, setBattleType] = useState('memory');
-  const [timeLeft, setTimeLeft] = useState(0);
-  const [gameStatus, setGameStatus] = useState('idle');
+  const [combatStatus, setCombatStatus] = useState('idle'); // idle, fighting, won, lost
+  const [playerHp, setPlayerHp] = useState(0);
+  const [maxPlayerHp, setMaxPlayerHp] = useState(0);
+  const [bossHp, setBossHp] = useState(0);
+  const [maxBossHp, setMaxBossHp] = useState(0);
+  const [combatLog, setCombatLog] = useState([]);
   
-  const [cards, setCards] = useState([]);
-  const [flippedIndices, setFlippedIndices] = useState([]);
-  
-  const [sequence, setSequence] = useState([]);
-  const [playerSequence, setPlayerSequence] = useState([]);
-  const [sequencePhase, setSequencePhase] = useState('showing');
-  
-  const [runeFeedback, setRuneFeedback] = useState(null); // { rune: '🔮', status: 'correct' | 'wrong' }
-  const [isResting, setIsResting] = useState(false);
-  const [isVictoryFlashing, setIsVictoryFlashing] = useState(false);
+  const logContainerRef = useRef(null);
 
+  // Load Data
   useEffect(() => {
     const savedStage = localStorage.getItem('aethelgard_stage');
     if (savedStage) setStageIndex(parseInt(savedStage, 10));
-
     const savedSkills = localStorage.getItem('aethelgard_equipped');
     if (savedSkills) setEquippedSkills(JSON.parse(savedSkills));
 
@@ -60,128 +62,88 @@ function App() {
     loadData();
   }, []);
 
+  // Save equipped skills
   useEffect(() => {
     localStorage.setItem('aethelgard_equipped', JSON.stringify(equippedSkills));
   }, [equippedSkills]);
 
+  // Auto-scroll combat log
+  useEffect(() => {
+    if (logContainerRef.current) {
+      logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
+    }
+  }, [combatLog]);
+
   const effectiveLevel = player.level + equippedSkills.length;
   const currentStage = getStageInfo(stageIndex);
+  const character = getCharacterEvolution(effectiveLevel);
 
+  // --- COMBAT INITIALIZATION ---
   const startBattle = () => {
-    const diff = currentStage.reqLevel - effectiveLevel;
-    const isUnderleveled = diff > 0;
+    const pMaxHp = effectiveLevel * 25 + 50;
+    const bMaxHp = currentStage.reqLevel * 30 + 50;
     
-    const chosenGame = Math.random() > 0.5 ? 'memory' : 'sequence';
-    setBattleType(chosenGame);
-    setGameStatus('playing');
+    setMaxPlayerHp(pMaxHp);
+    setPlayerHp(pMaxHp);
+    setMaxBossHp(bMaxHp);
+    setBossHp(bMaxHp);
+    
+    setCombatLog([`You engaged ${currentStage.boss}!`, `Your Level: ${effectiveLevel} vs Boss Level: ${currentStage.reqLevel}`]);
+    setCombatStatus('fighting');
     setIsBattling(true);
-
-    if (chosenGame === 'memory') {
-      const numPairs = isUnderleveled ? 8 : 6;
-      const initialTime = isUnderleveled ? Math.max(15, 45 - (diff * 5)) : 60;
-      
-      const selectedRunes = SPELL_RUNES.slice(0, numPairs);
-      const deck = [...selectedRunes, ...selectedRunes]
-        .sort(() => Math.random() - 0.5)
-        .map((emoji, idx) => ({ id: idx, emoji, isFlipped: false, isMatched: false }));
-
-      setCards(deck);
-      setFlippedIndices([]);
-      setTimeLeft(initialTime);
-    } else {
-      const seqLength = isUnderleveled ? 6 : 4;
-      const initialTime = isUnderleveled ? Math.max(10, 20 - diff) : 30;
-      
-      const newSeq = Array.from({length: seqLength}, () => SPELL_RUNES[Math.floor(Math.random() * SPELL_RUNES.length)]);
-      setSequence(newSeq);
-      setPlayerSequence([]);
-      setSequencePhase('showing');
-      setTimeLeft(initialTime);
-
-      setTimeout(() => {
-        if (isBattling) setSequencePhase('input');
-      }, 3000);
-    }
   };
 
-  const handleCardClick = (index) => {
-    if (battleType !== 'memory' || gameStatus !== 'playing') return;
-    if (flippedIndices.length === 2 || cards[index].isFlipped || cards[index].isMatched) return;
-
-    const newIndices = [...flippedIndices, index];
-    setFlippedIndices(newIndices);
-
-    const newCards = [...cards];
-    newCards[index].isFlipped = true;
-    setCards(newCards);
-
-    if (newIndices.length === 2) {
-      const [firstIndex, secondIndex] = newIndices;
-      if (newCards[firstIndex].emoji === newCards[secondIndex].emoji) {
-        newCards[firstIndex].isMatched = true;
-        newCards[secondIndex].isMatched = true;
-        setCards(newCards);
-        setFlippedIndices([]);
-
-        if (newCards.every(c => c.isMatched)) {
-          setGameStatus('won');
-          handleWin();
-        }
-      } else {
-        setTimeout(() => {
-          const resetCards = [...cards];
-          resetCards[firstIndex].isFlipped = false;
-          resetCards[secondIndex].isFlipped = false;
-          setCards(resetCards);
-          setFlippedIndices([]);
-        }, 800);
-      }
-    }
-  };
-
-  const handleRuneClick = (rune) => {
-    if (battleType !== 'sequence' || sequencePhase !== 'input' || gameStatus !== 'playing') return;
-    
-    const newPlayerSeq = [...playerSequence, rune];
-    setPlayerSequence(newPlayerSeq);
-    const currentIndex = newPlayerSeq.length - 1;
-    
-    if (newPlayerSeq[currentIndex] !== sequence[currentIndex]) {
-      setRuneFeedback({ rune, status: 'wrong' });
-      setGameStatus('lost');
-      setTimeout(() => closeBattle("Defeat... You cast the wrong rune."), 2000);
-      return;
-    }
-    
-    setRuneFeedback({ rune, status: 'correct' });
-    setTimeout(() => setRuneFeedback(null), 300);
-
-    if (newPlayerSeq.length === sequence.length) {
-      setGameStatus('won');
-      handleWin();
-    }
-  };
-
+  // --- AUTO-BATTLER TURN LOOP ---
   useEffect(() => {
-    if (isBattling && gameStatus === 'playing' && timeLeft > 0) {
-      if (battleType === 'sequence' && sequencePhase === 'showing') return;
-      const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
-      return () => clearTimeout(timer);
-    } else if (timeLeft === 0 && gameStatus === 'playing') {
-      setGameStatus('lost');
-      setTimeout(() => closeBattle("Defeat... You lost your focus. Rest and try again."), 2000);
-    }
-  }, [timeLeft, isBattling, gameStatus, battleType, sequencePhase]);
+    if (combatStatus !== 'fighting') return;
+
+    const timer = setTimeout(() => {
+      // 1. Calculate Player Damage
+      const basePlayerDmg = effectiveLevel * 5 + (equippedSkills.length * 8);
+      const playerDmg = Math.floor(basePlayerDmg + Math.random() * 10);
+      const newBossHp = Math.max(0, bossHp - playerDmg);
+
+      // 2. Calculate Boss Damage
+      const baseBossDmg = currentStage.reqLevel * 6;
+      const bossDmg = Math.floor(baseBossDmg + Math.random() * 15);
+      const newPlayerHp = Math.max(0, playerHp - bossDmg);
+
+      // 3. Update State
+      setBossHp(newBossHp);
+      
+      // If boss dies before it hits back
+      if (newBossHp <= 0) {
+        setCombatLog(prev => [...prev, `💥 You dealt ${playerDmg} DMG!`, `🏆 ${currentStage.boss} has been defeated!`]);
+        setCombatStatus('won');
+        setTimeout(() => handleWin(), 2500);
+        return;
+      }
+
+      setPlayerHp(newPlayerHp);
+      
+      // Update Log for full exchange
+      setCombatLog(prev => [
+        ...prev, 
+        `⚔️ You strike for ${playerDmg} DMG!`, 
+        `🩸 Boss hits back for ${bossDmg} DMG!`
+      ]);
+
+      // If player dies
+      if (newPlayerHp <= 0) {
+        setCombatStatus('lost');
+        setTimeout(() => closeBattle("Your character fainted. You need to train and level up more!"), 3000);
+      }
+
+    }, 1200); // Trade blows every 1.2 seconds
+
+    return () => clearTimeout(timer);
+  }, [combatStatus, playerHp, bossHp, effectiveLevel, currentStage, equippedSkills]);
 
   const handleWin = () => {
-    setIsVictoryFlashing(true);
-    setTimeout(() => {
-      const nextStage = stageIndex + 1;
-      setStageIndex(nextStage);
-      localStorage.setItem('aethelgard_stage', nextStage);
-      setIsVictoryFlashing(false);
-      closeBattle(`Victory! Your magic dismantled ${currentStage.boss}.`);
-    }, 1200);
+    const nextStage = stageIndex + 1;
+    setStageIndex(nextStage);
+    localStorage.setItem('aethelgard_stage', nextStage);
+    closeBattle(`Victory! You advanced to Tier ${nextStage + 1}.`);
   };
 
   const closeBattle = (message) => {
@@ -192,6 +154,7 @@ function App() {
     }
   };
 
+  // --- GENERAL ACTIONS ---
   const toggleEquipSkill = (skill) => {
     if (equippedSkills.includes(skill)) {
       setEquippedSkills(equippedSkills.filter(s => s !== skill));
@@ -204,20 +167,16 @@ function App() {
   };
 
   const handleRestAtInn = () => {
-    setIsResting(true);
-    setTimeout(() => {
-      setEquippedSkills([]);
-      setRestMessage("The night passes... Your mind is clear and your magic is reset.");
-      setIsResting(false);
-    }, 1500);
-    setTimeout(() => setRestMessage(""), 5500);
+    setEquippedSkills([]);
+    setRestMessage("Your companion rested. Magic capacity reset.");
+    setTimeout(() => setRestMessage(""), 4000);
   };
 
   const baseExpForCurrentLevel = Math.pow(player.level - 1, 2) * 100;
   const baseExpForNextLevel = Math.pow(player.level, 2) * 100;
   const progressPercentage = Math.min(((player.exp - baseExpForCurrentLevel) / (baseExpForNextLevel - baseExpForCurrentLevel)) * 100, 100);
 
-  if (isLoading) return <div className="loading-screen">Reading the ancient texts...</div>;
+  if (isLoading) return <div className="loading-screen">Booting Digivice...</div>;
 
   const mapNodes = [];
   for (let i = Math.max(0, stageIndex - 1); i <= stageIndex + 2; i++) {
@@ -227,59 +186,51 @@ function App() {
   return (
     <div className="rpg-container">
       
-      {/* CINEMATIC OVERLAYS */}
-      {isResting && <div className="fade-to-black-overlay"></div>}
-      {isVictoryFlashing && <div className="victory-flash-overlay"></div>}
-
+      {/* --- AUTO-BATTLER MODAL --- */}
       {isBattling && (
         <div className="battle-overlay">
-          <div className="battle-modal">
-            <div className="battle-stats">
-              <span className={`timer ${timeLeft <= 5 ? 'panic' : timeLeft <= 15 ? 'warning' : ''}`}>
-                ⏳ {timeLeft}s
-              </span>
-              <button className="flee-btn" onClick={() => closeBattle("You fled the encounter.")}>Flee</button>
-            </div>
+          <div className="battle-modal digivice-battle">
+            <h2 className="battle-title">COMBAT ENGAGED</h2>
             
-            {gameStatus === 'won' && <h2 className="battle-result victory">Magic Dispelled!</h2>}
-            {gameStatus === 'lost' && <h2 className="battle-result defeat">Focus Broken!</h2>}
+            <div className="health-bar-container">
+              <div className="hp-header">
+                <span>{character.title}</span>
+                <span>{playerHp} / {maxPlayerHp} HP</span>
+              </div>
+              <div className="hp-track">
+                <div className="hp-fill player-hp" style={{ width: `${(playerHp / maxPlayerHp) * 100}%` }}></div>
+              </div>
+            </div>
 
-            {battleType === 'memory' ? (
-              <div className={`battle-grid pairs-${cards.length / 2}`}>
-                {cards.map((card, index) => (
-                  <div key={card.id} className={`battle-card ${card.isFlipped || card.isMatched ? 'flipped' : ''}`} onClick={() => handleCardClick(index)}>
-                    <div className="card-inner">
-                      <div className="card-front">{card.emoji}</div>
-                      <div className="card-back"></div>
-                    </div>
-                  </div>
-                ))}
+            <div className="battle-sprites">
+              <div className={`battle-sprite ${combatStatus === 'fighting' ? 'attacking-left' : ''}`}>{character.sprite}</div>
+              <div className="vs-badge">VS</div>
+              <div className={`battle-sprite boss-sprite ${combatStatus === 'fighting' ? 'attacking-right' : ''}`}>👹</div>
+            </div>
+
+            <div className="health-bar-container">
+              <div className="hp-header boss-header-text">
+                <span>{currentStage.boss}</span>
+                <span>{bossHp} / {maxBossHp} HP</span>
               </div>
-            ) : (
-              <div className="sequence-game">
-                <h3 className="sequence-instruction">
-                  {sequencePhase === 'showing' ? 'Memorize the Spell!' : 'Cast the Runes!'}
-                </h3>
-                <div className="sequence-display">
-                  {sequence.map((rune, idx) => (
-                    <div key={idx} className={`sequence-slot ${playerSequence.length > idx ? 'filled' : ''}`}>
-                      {sequencePhase === 'showing' ? rune : (playerSequence[idx] || '?')}
-                    </div>
-                  ))}
+              <div className="hp-track">
+                <div className="hp-fill boss-hp" style={{ width: `${(bossHp / maxBossHp) * 100}%` }}></div>
+              </div>
+            </div>
+
+            <div className="combat-log" ref={logContainerRef}>
+              {combatLog.map((log, index) => (
+                <div key={index} className={`log-entry ${log.includes('You strike') ? 'log-player' : log.includes('Boss hits') ? 'log-boss' : 'log-system'}`}>
+                  {log}
                 </div>
-                {sequencePhase === 'input' && (
-                  <div className="sequence-keypad">
-                    {SPELL_RUNES.map(rune => {
-                      const feedbackClass = runeFeedback?.rune === rune ? `feedback-${runeFeedback.status}` : '';
-                      return (
-                        <button key={rune} className={`rune-btn ${feedbackClass}`} onClick={() => handleRuneClick(rune)}>
-                          {rune}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+              ))}
+            </div>
+
+            {combatStatus === 'won' && <div className="battle-result victory">ENEMY DEFEATED!</div>}
+            {combatStatus === 'lost' && <div className="battle-result defeat">YOU FAINTED!</div>}
+            
+            {combatStatus !== 'fighting' && (
+              <button className="flee-btn" style={{marginTop: '15px'}} onClick={() => closeBattle()}>Close</button>
             )}
           </div>
         </div>
@@ -289,6 +240,33 @@ function App() {
         <h1>Traveler of Aethelgard</h1>
         <p className="subtitle">Location: {currentStage.town}</p>
       </header>
+
+      {/* --- DIGIVICE VIRTUAL PET PROFILE --- */}
+      <div className="digivice-container">
+        <div className="digivice-screen">
+          <div className="digivice-sprite idle-bounce">{character.sprite}</div>
+          <div className="digivice-stats">
+            <div className="digivice-stage">{character.stage}</div>
+            <div className="digivice-name">{character.title}</div>
+            <div className="digivice-level">LVL {player.level} {equippedSkills.length > 0 && `(+${equippedSkills.length})`}</div>
+          </div>
+        </div>
+        <div className="digivice-actions">
+           <a href="https://alankhoocl.github.io/AI-Learning-Management/" target="_blank" rel="noopener noreferrer" className="train-btn">
+              ⚙️ Go Train
+            </a>
+        </div>
+      </div>
+
+      <div className="exp-section">
+        <div className="exp-labels">
+          <span>EXP: {player.exp}</span>
+          <span>Next: {baseExpForNextLevel}</span>
+        </div>
+        <div className="exp-bar-bg">
+          <div className="exp-bar-fill" style={{ width: `${progressPercentage}%` }}></div>
+        </div>
+      </div>
 
       <div className="journey-map endless-map">
         <div className="map-line"></div>
@@ -314,46 +292,16 @@ function App() {
           <span className="boss-level">Req: LVL {currentStage.reqLevel}</span>
         </div>
         <p className="boss-lore">"{currentStage.lore}"</p>
-        <button className="challenge-btn" onClick={startBattle}>Engage the Anomaly</button>
+        <button className="challenge-btn" onClick={startBattle}>Engage Auto-Battle</button>
         {battleMessage && (
           <div className={`battle-message ${battleMessage.includes('Victory') ? 'victory' : 'defeat'}`}>{battleMessage}</div>
         )}
       </div>
 
-      <div className="status-card">
-        <div className="character-profile">
-          <div className="character-portrait">
-            <img src="https://api.dicebear.com/7.x/adventurer/svg?seed=Aethelgard&backgroundColor=transparent" alt="Character Portrait" />
-          </div>
-          
-          <div className="profile-details">
-            <div className="level-badge">
-              <span className="level-label">LVL</span>
-              <span className="level-number">{player.level}</span>
-              {equippedSkills.length > 0 && <span className="level-boost">+{equippedSkills.length}</span>}
-            </div>
-            
-            <a href="https://alankhoocl.github.io/AI-Learning-Management/" target="_blank" rel="noopener noreferrer" className="train-btn">
-              ✨ Go Train
-            </a>
-          </div>
-        </div>
-
-        <div className="exp-section">
-          <div className="exp-labels">
-            <span>EXP: {player.exp}</span>
-            <span>Next: {baseExpForNextLevel}</span>
-          </div>
-          <div className="exp-bar-bg">
-            <div className="exp-bar-fill" style={{ width: `${progressPercentage}%` }}></div>
-          </div>
-        </div>
-      </div>
-
       <div className="equipped-section">
         <div className="equipped-header-row">
           <h2>Prepared Magic ({equippedSkills.length}/3)</h2>
-          <button className="inn-btn" onClick={handleRestAtInn}>🛌 Rest at Inn</button>
+          <button className="inn-btn" onClick={handleRestAtInn}>🛌 Rest</button>
         </div>
         
         {restMessage && <div className="inn-message">{restMessage}</div>}
