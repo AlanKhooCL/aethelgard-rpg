@@ -6,9 +6,12 @@ const CHAPTERS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQyJt1
 
 export const fetchAethelgardData = async () => {
   try {
+    // CACHE-BUSTER: We add the exact current millisecond to the URL to force Google/Browser to give us fresh data
+    const timestamp = new Date().getTime();
+    
     const [coursesRes, chaptersRes] = await Promise.all([
-      fetch(COURSES_CSV_URL),
-      fetch(CHAPTERS_CSV_URL)
+      fetch(`${COURSES_CSV_URL}&t=${timestamp}`, { cache: 'no-store' }),
+      fetch(`${CHAPTERS_CSV_URL}&t=${timestamp}`, { cache: 'no-store' })
     ]);
 
     if (!coursesRes.ok || !chaptersRes.ok) throw new Error("Failed to read the ancient texts.");
