@@ -1,241 +1,148 @@
 @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Cinzel&family=Press+Start+2P&family=IM+Fell+English:ital@0;1&display=swap');
 
 :root {
-  --color-bg: #0d0a1a;
-  --color-surface: #1a1330;
-  --color-border: #3d2a6e;
-  --color-gold: #f0c060;
-  --color-accent: #a78bfa;
-  --color-danger: #f87171;
-  --color-success: #4ade80;
+  /* HUFFLEPUFF COLOR PALETTE */
+  --color-bg: #0a0a0a;          /* Pitch Black */
+  --color-surface: #1c1c1c;     /* Charcoal/Dark Gray */
+  --color-border: #FFDB00;      /* Hufflepuff Yellow/Gold */
+  --color-gold: #FFDB00;
+  --color-accent: #e5c100;      /* Slightly darker yellow for hovers */
+  --color-danger: #d9534f;      /* Muted red for errors/damage */
+  --color-success: #5cb85c;     /* Muted green for success/HP */
+  
   --font-title: 'Cinzel Decorative', serif;
   --font-body: 'Cinzel', serif;
   --font-lore: 'IM Fell English', serif;
-  --font-lcd: 'Press Start 2P', monospace; /* Retro font for Digivice */
+  --font-lcd: 'Press Start 2P', monospace; 
+
+  /* Gacha Tier Colors (Adjusted slightly to pop against dark grey) */
+  --tier-common: #888888;
+  --tier-rare: #4a90e2;
+  --tier-epic: #a78bfa;
+  --tier-legendary: #FFDB00;
 }
 
-body {
-  margin: 0;
-  background-color: var(--color-bg);
-  color: #e2e2e8;
-  font-family: var(--font-body);
-  display: flex;
-  justify-content: center;
+body { 
+  margin: 0; 
+  background-color: var(--color-bg); 
+  color: #e2e2e8; 
+  font-family: var(--font-body); 
+  display: flex; 
+  justify-content: center; 
 }
 
-.rpg-container {
-  width: 100%;
-  max-width: 480px;
-  padding: 20px;
-  box-sizing: border-box;
-  position: relative;
+.rpg-container { 
+  width: 100%; 
+  max-width: 480px; 
+  padding: 20px; 
+  box-sizing: border-box; 
+  position: relative; 
 }
 
 .game-header { text-align: center; margin-bottom: 20px; }
-.game-header h1 { margin: 0; font-size: 1.8rem; color: var(--color-gold); font-family: var(--font-title); }
-.subtitle { margin: 5px 0 0 0; font-size: 0.95rem; opacity: 0.8; font-family: var(--font-lore); font-style: italic; }
+.game-header h1 { margin: 0; font-size: 1.8rem; color: var(--color-gold); font-family: var(--font-title); text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+.subtitle { margin: 5px 0 0 0; font-size: 0.95rem; opacity: 0.8; font-family: var(--font-lore); font-style: italic; color: #ccc;}
 h2, h3 { font-family: var(--font-title); }
 
 /* --- DIGIVICE VIRTUAL PET PROFILE --- */
-.digivice-container {
-  background: #2a2a35;
-  border: 4px solid #444;
-  border-radius: 20px;
-  padding: 15px;
-  margin-bottom: 30px;
-  box-shadow: 0 8px 0 #111, inset 0 2px 10px rgba(0,0,0,0.5);
+.digivice-container { 
+  background: var(--color-surface); 
+  border: 4px solid var(--color-gold); 
+  border-radius: 20px; 
+  padding: 15px; 
+  margin-bottom: 20px; 
+  box-shadow: 0 8px 0 #111, inset 0 2px 10px rgba(0,0,0,0.8); 
 }
 
-.digivice-screen {
-  background: #8bac0f; /* Classic Gameboy/Digivice green */
-  border: 4px solid #0f380f;
-  border-radius: 8px;
-  padding: 15px;
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
-  margin-bottom: 15px;
+.digivice-screen { 
+  background: #8bac0f; /* Classic Gameboy green */
+  border: 4px solid #0f380f; 
+  border-radius: 8px; 
+  padding: 15px; 
+  display: flex; 
+  align-items: center; 
+  gap: 15px; 
+  box-shadow: inset 0 0 10px rgba(0,0,0,0.5); 
+  margin-bottom: 15px; 
 }
 
-.digivice-sprite {
-  font-size: 3.5rem;
-  filter: drop-shadow(2px 2px 0px #0f380f);
-  flex-shrink: 0;
-}
+.digivice-sprite { font-size: 3.5rem; filter: drop-shadow(2px 2px 0px #0f380f); flex-shrink: 0; }
+.idle-bounce { animation: bounce 1s infinite alternate cubic-bezier(0.5, 0.05, 1, 0.5); }
+@keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-8px); } }
 
-.idle-bounce {
-  animation: bounce 1s infinite alternate cubic-bezier(0.5, 0.05, 1, 0.5);
-}
-
-@keyframes bounce {
-  from { transform: translateY(0); }
-  to   { transform: translateY(-8px); }
-}
-
-.digivice-stats {
-  display: flex;
-  flex-direction: column;
-  color: #0f380f; /* Dark green text */
-  font-family: var(--font-lcd);
-  flex-grow: 1;
-}
-
+.digivice-stats { display: flex; flex-direction: column; color: #0f380f; font-family: var(--font-lcd); flex-grow: 1; }
 .digivice-stage { font-size: 0.5rem; margin-bottom: 5px; text-transform: uppercase; }
 .digivice-name { font-size: 0.7rem; margin-bottom: 8px; font-weight: bold; line-height: 1.4; }
 .digivice-level { font-size: 0.75rem; }
 
-/* NEW LCD EXP BAR */
-.lcd-exp-container {
-  margin-top: 10px;
-  width: 100%;
-}
+/* LCD EXP BAR */
+.lcd-exp-container { margin-top: 10px; width: 100%; }
+.lcd-exp-labels { display: flex; justify-content: space-between; font-size: 0.5rem; margin-bottom: 4px; }
+.lcd-exp-bg { width: 100%; height: 8px; background-color: rgba(15, 56, 15, 0.2); border: 1px solid #0f380f; border-radius: 2px; overflow: hidden; }
+.lcd-exp-fill { height: 100%; background-color: #0f380f; transition: width 1.2s cubic-bezier(0.25, 0.1, 0.25, 1); }
 
-.lcd-exp-labels {
+/* Digivice Action & Menu */
+.digivice-actions { display: flex; justify-content: flex-end; margin-bottom: 15px;}
+.train-btn { 
+  background: var(--color-gold); 
+  color: #111; 
+  text-decoration: none; 
+  padding: 8px 16px; 
+  border-radius: 20px; 
+  font-size: 0.85rem; 
+  font-family: var(--font-title); 
+  font-weight: bold; 
+  border: 2px solid #000; 
+  box-shadow: 0 4px 0 #000; 
+  transition: all 0.1s; 
+}
+.train-btn:active { transform: translateY(4px); box-shadow: 0 0 0 #000; }
+
+.digivice-menu {
   display: flex;
-  justify-content: space-between;
-  font-size: 0.5rem;
-  margin-bottom: 4px;
+  justify-content: space-around;
+  border-top: 2px solid #333;
+  padding-top: 15px;
 }
 
-.lcd-exp-bg {
-  width: 100%;
-  height: 8px;
-  background-color: rgba(15, 56, 15, 0.2);
-  border: 1px solid #0f380f;
-  border-radius: 2px;
-  overflow: hidden;
-}
-
-.lcd-exp-fill {
-  height: 100%;
-  background-color: #0f380f;
-  transition: width 1.2s cubic-bezier(0.25, 0.1, 0.25, 1);
-}
-
-.digivice-actions {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.train-btn {
-  background: #e2e2e8;
-  color: #111;
-  text-decoration: none;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  font-family: var(--font-title);
-  font-weight: bold;
-  border: 2px solid #111;
-  box-shadow: 0 4px 0 #111;
-  transition: all 0.1s;
-}
-
-.train-btn:active {
-  transform: translateY(4px);
-  box-shadow: 0 0 0 #111;
-}
-
-/* --- AUTO-BATTLER COMBAT ARENA --- */
-.battle-overlay {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.9);
-  z-index: 1000;
+.menu-btn {
+  background: #111;
+  color: #fff;
+  border: 2px solid #444;
+  border-radius: 50%;
+  width: 55px;
+  height: 55px;
+  font-size: 1.5rem;
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.5);
 }
 
-.digivice-battle {
-  background: var(--color-surface);
-  border: 2px solid var(--color-border);
-  border-radius: 12px;
-  padding: 20px;
-  width: 100%;
-  max-width: 400px;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 0 30px var(--color-accent);
+.menu-btn:hover { border-color: var(--color-gold); }
+.menu-btn.active {
+  background: var(--color-gold);
+  border-color: #fff;
+  transform: scale(1.1);
+  box-shadow: 0 0 15px rgba(255, 219, 0, 0.4);
 }
 
-.battle-title { text-align: center; color: var(--color-danger); margin-top: 0; font-size: 1.3rem; margin-bottom: 20px;}
-
-.health-bar-container { margin-bottom: 15px; }
-.hp-header { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 5px; font-family: monospace;}
-.boss-header-text { color: var(--color-danger); }
-
-.hp-track { width: 100%; height: 15px; background: #222; border-radius: 4px; border: 1px solid #555; overflow: hidden; }
-.hp-fill { height: 100%; transition: width 0.3s ease-out; }
-.player-hp { background: var(--color-success); }
-.boss-hp { background: var(--color-danger); }
-
-.battle-sprites {
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  margin: 20px 0;
-  font-size: 3.5rem;
+/* --- EXPANDABLE PANELS --- */
+.panel-section { 
+  background-color: var(--color-surface); 
+  border-radius: 12px; 
+  padding: 20px; 
+  margin-bottom: 30px; 
+  border: 1px solid #333; 
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
 }
 
-.vs-badge { font-family: var(--font-title); font-size: 1.2rem; color: var(--color-gold); font-weight: bold; }
+.fade-in { animation: fadeIn 0.3s ease-out forwards; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
-/* Attack Animations */
-.attacking-left { animation: thrustRight 1.2s infinite; }
-.attacking-right { animation: thrustLeft 1.2s infinite; animation-delay: 0.6s; }
-
-@keyframes thrustRight {
-  0%, 80%, 100% { transform: translateX(0); }
-  90% { transform: translateX(30px) scale(1.1); }
-}
-
-@keyframes thrustLeft {
-  0%, 80%, 100% { transform: translateX(0); }
-  90% { transform: translateX(-30px) scale(1.1); }
-}
-
-.combat-log {
-  background: #000;
-  border: 1px solid #333;
-  border-radius: 6px;
-  height: 120px;
-  overflow-y: auto;
-  padding: 10px;
-  font-family: monospace;
-  font-size: 0.8rem;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.log-entry { opacity: 0; animation: logFadeIn 0.3s forwards; }
-@keyframes logFadeIn { to { opacity: 1; } }
-
-.log-system { color: #aaa; }
-.log-player { color: var(--color-success); }
-.log-boss { color: var(--color-danger); }
-
-.battle-result {
-  text-align: center;
-  font-size: 1.5rem;
-  font-family: var(--font-title);
-  margin-top: 15px;
-  animation: pulseNode 1.5s infinite;
-}
-.battle-result.victory { color: var(--color-success); }
-.battle-result.defeat { color: var(--color-danger); }
-
-/* --- MAP & CARDS (Standard RPG Theme) --- */
-.boss-card, .equipped-section, .skills-section, .quests-section {
-  background-color: var(--color-surface);
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 30px;
-  border: 1px solid var(--color-border);
-}
-
+/* BOSS CARD */
 .boss-card { border-left: 4px solid var(--color-danger); }
 .boss-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
 .boss-name { font-family: var(--font-title); font-size: 1.2rem; color: var(--color-danger); margin: 0; }
@@ -244,22 +151,78 @@ h2, h3 { font-family: var(--font-title); }
 .challenge-btn { width: 100%; background-color: transparent; border: 2px solid var(--color-danger); color: #ffcccc; padding: 12px; border-radius: 6px; cursor: pointer; font-family: var(--font-title); font-size: 1.1rem; transition: all 0.3s ease; }
 .challenge-btn:hover { background-color: var(--color-danger); color: #fff; }
 
-.endless-map { margin-bottom: 40px; position: relative; padding: 10px 0 20px 0; }
-.map-line { position: absolute; top: 32px; left: 20px; right: 20px; height: 4px; background-color: var(--color-border); z-index: 1; }
-.endless-map .map-nodes { display: flex; justify-content: space-around; position: relative; z-index: 2; }
-.map-node-container { display: flex; flex-direction: column; align-items: center; gap: 12px; }
-.map-node { width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--color-border); background: var(--color-surface); transition: all 0.3s ease; display: flex; justify-content: center; align-items: center; color: #666; font-size: 1.2rem; z-index: 2; }
-.map-node.current { border-color: var(--color-gold); color: var(--color-gold); box-shadow: 0 0 16px var(--color-gold); animation: pulseNode 1.5s ease-in-out infinite; }
-.map-node.completed { background: var(--color-success); border-color: var(--color-success); color: var(--color-success); }
-@keyframes pulseNode { 0%, 100% { transform: scale(1); box-shadow: 0 0 10px rgba(240, 192, 96, 0.5); } 50% { transform: scale(1.15); box-shadow: 0 0 25px rgba(240, 192, 96, 0.8); } }
+/* EQUIPPED MAGIC */
+.equipped-header-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 20px; }
+.equipped-header-row h2 { margin: 0; font-size: 1.2rem; color: var(--color-gold); }
+.inn-btn { background: transparent; border: 1px solid #555; color: #ccc; padding: 6px 12px; border-radius: 4px; font-family: var(--font-body); cursor: pointer; transition: 0.2s; }
+.inn-btn:hover { border-color: var(--color-gold); color: var(--color-gold); }
 
-.equipped-header-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--color-border); padding-bottom: 15px; margin-bottom: 20px; }
-.equipped-header-row h2 { margin: 0; font-size: 1.2rem; }
-.spell-card { display: flex; align-items: center; gap: 15px; padding: 12px 20px; border-radius: 8px; background: rgba(0, 0, 0, 0.3); border: 1px dashed var(--color-border); color: #666; margin-bottom: 10px; font-family: var(--font-body); }
-.spell-card.filled { border: 1px solid var(--color-accent); background: linear-gradient(90deg, rgba(26, 19, 48, 0.8), rgba(61, 42, 110, 0.4)); color: #fff; box-shadow: inset 0 0 20px rgba(167, 139, 250, 0.1); }
-.spell-icon { font-size: 1.4rem; }
-.spell-name { font-size: 1.1rem; letter-spacing: 0.5px; }
-.inn-btn { background: transparent; border: 1px solid var(--color-border); color: var(--color-accent); padding: 6px 12px; border-radius: 4px; font-family: var(--font-body); cursor: pointer; }
+.spell-card { display: flex; align-items: center; gap: 15px; padding: 12px 20px; border-radius: 8px; background: #111; border: 1px dashed #444; color: #666; margin-bottom: 10px; }
+.spell-details { display: flex; flex-direction: column; }
+.spell-name { font-size: 1.1rem; color: #fff; }
+.spell-power { font-size: 0.8rem; font-family: monospace; color: #aaa; }
 
-.quest-item { background-color: rgba(0,0,0,0.2); margin-bottom: 8px; padding: 12px; border-radius: 6px; border-left: 2px solid var(--color-border); }
-.course-title-header { font-size: 1.05rem; color: var(--color-gold); margin-bottom: 15px; }
+/* Tier borders for equipped cards */
+.spell-card.tier-common { border: 1px solid var(--tier-common); }
+.spell-card.tier-rare { border: 1px solid var(--tier-rare); }
+.spell-card.tier-epic { border: 1px solid var(--tier-epic); }
+.spell-card.tier-legendary { border: 1px solid var(--tier-legendary); box-shadow: inset 0 0 20px rgba(255, 219, 0, 0.1); }
+
+/* GACHA SUMMONING ALTAR */
+.gacha-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.gacha-header h2 { margin: 0; font-size: 1.2rem; color: var(--color-gold); }
+.crystal-count { font-size: 1.1rem; color: #fff; background: #111; padding: 5px 10px; border-radius: 6px; border: 1px solid #333; }
+.gacha-lore { font-size: 0.9rem; color: #aaa; font-style: italic; margin-bottom: 20px; }
+
+.summon-btn { width: 100%; padding: 15px; border-radius: 8px; font-family: var(--font-title); font-size: 1.1rem; cursor: pointer; transition: all 0.2s; margin-bottom: 15px; border: none; }
+.summon-btn.active { background: var(--color-gold); color: #111; font-weight: bold; box-shadow: 0 4px 15px rgba(255, 219, 0, 0.2); }
+.summon-btn.active:active { transform: scale(0.98); }
+.summon-btn.disabled { background: #222; color: #555; cursor: not-allowed; border: 1px solid #333; }
+
+.summon-message { text-align: center; padding: 10px; background: #111; border-radius: 6px; margin-bottom: 15px; font-weight: bold; animation: logFadeIn 0.3s; border: 1px solid #333;}
+.legendary-pull { color: var(--color-gold); text-shadow: 0 0 10px var(--color-gold); font-size: 1.2rem; }
+
+.inventory-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; max-height: 250px; overflow-y: auto; padding-right: 5px; }
+.inventory-item { background: #111; border: 2px solid; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; align-items: center; text-align: center; cursor: pointer; position: relative; transition: transform 0.1s; }
+.inventory-item:active { transform: scale(0.95); }
+.inventory-item.equipped-item { opacity: 0.4; }
+
+.inv-icon { font-size: 1.5rem; margin-bottom: 5px; }
+.inv-name { font-size: 0.8rem; color: #eee; margin-bottom: 5px; }
+.inv-power { font-size: 0.75rem; font-family: monospace; color: #aaa; }
+
+.equipped-badge { position: absolute; top: -5px; right: -5px; background: var(--color-gold); color: #111; width: 20px; height: 20px; border-radius: 50%; font-size: 0.7rem; display: flex; justify-content: center; align-items: center; font-weight: bold; }
+
+.inventory-item.tier-common { border-color: var(--tier-common); }
+.inventory-item.tier-rare { border-color: var(--tier-rare); }
+.inventory-item.tier-epic { border-color: var(--tier-epic); }
+.inventory-item.tier-legendary { border-color: var(--tier-legendary); box-shadow: 0 0 10px rgba(255,219,0,0.1); }
+
+/* --- AUTO-BATTLER COMBAT ARENA --- */
+.battle-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); z-index: 1000; display: flex; justify-content: center; align-items: center; padding: 20px; }
+.digivice-battle { background: var(--color-surface); border: 2px solid var(--color-gold); border-radius: 12px; padding: 20px; width: 100%; max-width: 400px; display: flex; flex-direction: column; box-shadow: 0 0 30px rgba(255, 219, 0, 0.1); }
+.battle-title { text-align: center; color: var(--color-danger); margin-top: 0; font-size: 1.3rem; margin-bottom: 20px;}
+.health-bar-container { margin-bottom: 15px; }
+.hp-header { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 5px; font-family: monospace;}
+.boss-header-text { color: var(--color-danger); }
+.hp-track { width: 100%; height: 15px; background: #111; border-radius: 4px; border: 1px solid #333; overflow: hidden; }
+.hp-fill { height: 100%; transition: width 0.3s ease-out; }
+.player-hp { background: var(--color-success); }
+.boss-hp { background: var(--color-danger); }
+
+.battle-sprites { display: flex; justify-content: space-around; align-items: center; margin: 20px 0; font-size: 3.5rem; }
+.vs-badge { font-family: var(--font-title); font-size: 1.2rem; color: var(--color-gold); font-weight: bold; }
+.attacking-left { animation: thrustRight 1.2s infinite; }
+.attacking-right { animation: thrustLeft 1.2s infinite; animation-delay: 0.6s; }
+@keyframes thrustRight { 0%, 80%, 100% { transform: translateX(0); } 90% { transform: translateX(30px) scale(1.1); } }
+@keyframes thrustLeft { 0%, 80%, 100% { transform: translateX(0); } 90% { transform: translateX(-30px) scale(1.1); } }
+
+.combat-log { background: #111; border: 1px solid #333; border-radius: 6px; height: 120px; overflow-y: auto; padding: 10px; font-family: monospace; font-size: 0.8rem; display: flex; flex-direction: column; gap: 6px; }
+.log-entry { opacity: 0; animation: logFadeIn 0.3s forwards; }
+@keyframes logFadeIn { to { opacity: 1; } }
+.log-system { color: #888; }
+.log-player { color: var(--color-success); }
+.log-boss { color: var(--color-danger); }
+.battle-result { text-align: center; font-size: 1.5rem; font-family: var(--font-title); margin-top: 15px; }
+.battle-result.victory { color: var(--color-success); }
+.battle-result.defeat { color: var(--color-danger); }
