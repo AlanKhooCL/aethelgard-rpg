@@ -112,6 +112,15 @@ function App() {
   const currentStage = getStageInfo(stageIndex);
   const character = getCharacterEvolution(effectiveLevel);
 
+  // --- SYNC DATA FUNCTION ---
+  const syncData = async () => {
+    setRestMessage("Syncing with the Hogwarts Archives...");
+    const data = await fetchAethelgardData();
+    setPlayer(data);
+    setTimeout(() => setRestMessage("Sync Complete! EXP and Crystals updated."), 3000);
+    setTimeout(() => setRestMessage(""), 6000);
+  };
+
   const toggleMenu = (menu) => {
     setActiveMenu(activeMenu === menu ? null : menu);
   };
@@ -312,7 +321,12 @@ function App() {
           </div>
         </div>
 
+        {restMessage && <div className="inn-message" style={{textAlign: 'center', marginBottom: '10px', color: 'var(--color-gold)'}}>{restMessage}</div>}
+
         <div className="digivice-actions">
+           <button onClick={syncData} className="train-btn">
+              🔄 Sync
+           </button>
            <a href="https://alankhoocl.github.io/AI-Learning-Management/" target="_blank" rel="noopener noreferrer" className="train-btn">
               📚 Go Study
             </a>
@@ -366,7 +380,6 @@ function App() {
             <h2>Prepared Spells ({equippedIds.length}/3)</h2>
             <button className="inn-btn" onClick={handleRestAtInn}>🛌 Rest</button>
           </div>
-          {restMessage && <div className="inn-message">{restMessage}</div>}
 
           <div className="equipped-slots">
             {[0, 1, 2].map(slotIndex => {
