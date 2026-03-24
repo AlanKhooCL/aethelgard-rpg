@@ -15,7 +15,7 @@ const getStageInfo = (index) => {
     town: `Region of ${place}`,
     boss: `The ${adj} ${noun}`,
     reqLevel: 3 + (index * 4),
-    lore: `An anomaly of Tier ${index + 1} blocks the path. Your stats must exceed its power.`
+    lore: `An ancient anomaly blocks the path. Your stats must exceed its power.`
   };
 };
 
@@ -143,7 +143,7 @@ function App() {
     const nextStage = stageIndex + 1;
     setStageIndex(nextStage);
     localStorage.setItem('aethelgard_stage', nextStage);
-    closeBattle(`Victory! You advanced to Tier ${nextStage + 1}.`);
+    closeBattle(`Victory! You advance deeper into the unknown.`);
   };
 
   const closeBattle = (message) => {
@@ -249,22 +249,24 @@ function App() {
             <div className="digivice-stage">{character.stage}</div>
             <div className="digivice-name">{character.title}</div>
             <div className="digivice-level">LVL {player.level} {equippedSkills.length > 0 && `(+${equippedSkills.length})`}</div>
+            
+            {/* NEW LCD-STYLED EXP BAR */}
+            <div className="lcd-exp-container">
+              <div className="lcd-exp-labels">
+                <span>EXP</span>
+                <span>{player.exp}/{baseExpForNextLevel}</span>
+              </div>
+              <div className="lcd-exp-bg">
+                <div className="lcd-exp-fill" style={{ width: `${progressPercentage}%` }}></div>
+              </div>
+            </div>
+
           </div>
         </div>
         <div className="digivice-actions">
            <a href="https://alankhoocl.github.io/AI-Learning-Management/" target="_blank" rel="noopener noreferrer" className="train-btn">
               ⚙️ Go Train
             </a>
-        </div>
-      </div>
-
-      <div className="exp-section">
-        <div className="exp-labels">
-          <span>EXP: {player.exp}</span>
-          <span>Next: {baseExpForNextLevel}</span>
-        </div>
-        <div className="exp-bar-bg">
-          <div className="exp-bar-fill" style={{ width: `${progressPercentage}%` }}></div>
         </div>
       </div>
 
@@ -275,11 +277,11 @@ function App() {
             const isCompleted = nodeIndex < stageIndex;
             const isCurrent = nodeIndex === stageIndex;
             return (
-              <div key={nodeIndex} className="map-node-container" title={`Tier ${nodeIndex + 1}`}>
+              <div key={nodeIndex} className="map-node-container">
                 <div className={`map-node ${isCompleted ? 'completed' : ''} ${isCurrent ? 'current' : ''}`}>
                   {isCompleted ? '✓' : isCurrent ? '🚶' : '•'}
                 </div>
-                <span className="map-node-label">Tier {nodeIndex + 1}</span>
+                {/* TIER LABELS HAVE BEEN REMOVED */}
               </div>
             );
           })}
