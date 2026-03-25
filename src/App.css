@@ -44,19 +44,19 @@ body {
 .subtitle { margin: 5px 0 0 0; font-size: 0.95rem; opacity: 0.8; font-family: var(--font-lore); font-style: italic; color: #ccc;}
 h2, h3 { font-family: var(--font-title); }
 
-/* --- CSS SPRITE ENGINE FOR THE CAT --- */
+/* --- CSS SPRITE ENGINE FOR THE CAT (NOW SMALLER & SHARPER) --- */
 .cat-sprite {
-  width: 80px;  /* Width of the display box */
-  height: 80px; /* Height of the display box */
-  /* Forces exact pixel math: 4 frames of 80px = 320px wide */
-  background-size: 320px 80px; 
+  width: 60px;  /* Shrunk from 80px */
+  height: 60px; /* Shrunk from 80px */
+  /* Exact pixel math: 4 frames of 60px = 240px wide */
+  background-size: 240px 60px; 
   background-repeat: no-repeat;
   animation: play-sprite 0.8s steps(4) infinite;
   image-rendering: pixelated; 
   flex-shrink: 0;
 }
 
-/* Swap the image file based on the stage */
+/* Swap the image file based on the stage (Using v2 for transparency cache busting) */
 .cat-stage-1 { background-image: url('/stage-1-v2.png'); }
 .cat-stage-2 { background-image: url('/stage-2-v2.png'); }
 .cat-stage-3 { background-image: url('/stage-3-v2.png'); }
@@ -64,12 +64,12 @@ h2, h3 { font-family: var(--font-title); }
 
 @keyframes play-sprite {
   from { background-position-x: 0px; }
-  to { background-position-x: -320px; } /* Snaps exactly 80px four times */
+  to { background-position-x: -240px; } /* Snaps exactly 60px four times */
 }
 
-/* Make the boss emoji match the scale of the cat */
+/* Boss emoji matched to the new 60px scale */
 .boss-sprite {
-  font-size: 3.5rem;
+  font-size: 3rem; 
 }
 
 /* --- DIGIVICE VIRTUAL PET PROFILE --- */
@@ -83,7 +83,7 @@ h2, h3 { font-family: var(--font-title); }
 }
 
 .digivice-screen { 
-  background: #8bac0f; /* Classic Gameboy green */
+  background: #8bac0f; 
   border: 4px solid #0f380f; 
   border-radius: 8px; 
   padding: 15px; 
@@ -94,9 +94,8 @@ h2, h3 { font-family: var(--font-title); }
   margin-bottom: 15px; 
 }
 
-/* Adjust the specific sizing for the Digivice screen */
+/* Removed the blurry 1.2x scaling! */
 .digivice-sprite { 
-  transform: scale(1.2); 
   margin-right: 10px;
 }
 
