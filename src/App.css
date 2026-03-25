@@ -46,24 +46,25 @@ h2, h3 { font-family: var(--font-title); }
 
 /* --- CSS SPRITE ENGINE FOR THE CAT --- */
 .cat-sprite {
-  width: 80px;  /* The width of a single frame */
-  height: 80px; /* The height of a single frame */
-  background-image: url('/cat-sprites.png'); /* IMPORTANT: Ensure image is named this in your public folder */
-  background-size: 320px 320px; /* 4 frames across, 4 frames down */
+  width: 80px;  /* Width of the display box */
+  height: 80px; /* Height of the display box */
+  /* We tell the browser the image is 4 frames wide, and 1 frame tall */
+  background-size: 400% 100%; 
+  background-repeat: no-repeat;
   animation: play-sprite 0.8s steps(4) infinite;
-  image-rendering: pixelated; /* Keeps the pixel art crispy */
+  image-rendering: pixelated; 
   flex-shrink: 0;
 }
 
-/* Maps to the 4 different vertical rows in your image */
-.cat-stage-1 { background-position-y: 0px; }
-.cat-stage-2 { background-position-y: -80px; }
-.cat-stage-3 { background-position-y: -160px; }
-.cat-stage-4 { background-position-y: -240px; }
+/* Now we just swap the image file based on the stage! */
+.cat-stage-1 { background-image: url('/stage-1.png'); }
+.cat-stage-2 { background-image: url('/stage-2.png'); }
+.cat-stage-3 { background-image: url('/stage-3.png'); }
+.cat-stage-4 { background-image: url('/stage-4.png'); }
 
 @keyframes play-sprite {
-  from { background-position-x: 0px; }
-  to { background-position-x: -320px; } /* Slides the image left across 4 frames */
+  from { background-position-x: 0%; }
+  to { background-position-x: 100%; } /* Slides the strip left across 4 frames */
 }
 
 /* Make the boss emoji match the scale of the cat */
