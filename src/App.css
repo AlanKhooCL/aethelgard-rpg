@@ -22,11 +22,18 @@
   --tier-legendary: #FFDB00;
 }
 
-body { 
+html, body { 
   margin: 0; 
-  background-color: var(--color-bg); 
+  padding: 0;
+  background-color: var(--color-bg); /* Forces the absolute bottom layer to be pitch black */
   color: #e2e2e8; 
   font-family: var(--font-body); 
+  min-height: 100vh;
+  width: 100%;
+  overflow-x: hidden; /* Destroys those white lines on the left and right */
+}
+
+body {
   display: flex; 
   justify-content: center; 
 }
