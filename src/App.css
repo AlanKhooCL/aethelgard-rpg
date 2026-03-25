@@ -44,30 +44,32 @@ body {
 .subtitle { margin: 5px 0 0 0; font-size: 0.95rem; opacity: 0.8; font-family: var(--font-lore); font-style: italic; color: #ccc;}
 h2, h3 { font-family: var(--font-title); }
 
-/* --- CSS SPRITE ENGINE FOR THE CAT (NOW SMALLER & SHARPER) --- */
+/* --- CSS SPRITE ENGINE (OPTION 2: THE IDLE BOUNCE) --- */
 .cat-sprite {
-  width: 60px;  /* Shrunk from 80px */
-  height: 60px; /* Shrunk from 80px */
-  /* Exact pixel math: 4 frames of 60px = 240px wide */
+  width: 60px;  
+  height: 60px; 
   background-size: 240px 60px; 
+  background-position: 0px 0px; /* Locks the view to ONLY the first cat frame! */
   background-repeat: no-repeat;
-  animation: play-sprite 0.8s steps(4) infinite;
   image-rendering: pixelated; 
   flex-shrink: 0;
+  
+  /* The smooth, classic virtual pet idle bounce */
+  animation: cat-idle 1s infinite alternate ease-in-out;
 }
 
-/* Swap the image file based on the stage (Using v2 for transparency cache busting) */
+/* We still swap the image file based on the stage */
 .cat-stage-1 { background-image: url('/stage-1-v2.png'); }
 .cat-stage-2 { background-image: url('/stage-2-v2.png'); }
 .cat-stage-3 { background-image: url('/stage-3-v2.png'); }
 .cat-stage-4 { background-image: url('/stage-4-v2.png'); }
 
-@keyframes play-sprite {
-  from { background-position-x: 0px; }
-  to { background-position-x: -240px; } /* Snaps exactly 60px four times */
+@keyframes cat-idle {
+  from { transform: translateY(0px); }
+  to { transform: translateY(-5px); } /* Gently bobs up and down */
 }
 
-/* Boss emoji matched to the new 60px scale */
+/* Make the boss emoji match the scale of the cat */
 .boss-sprite {
   font-size: 3rem; 
 }
@@ -94,7 +96,6 @@ h2, h3 { font-family: var(--font-title); }
   margin-bottom: 15px; 
 }
 
-/* Removed the blurry 1.2x scaling! */
 .digivice-sprite { 
   margin-right: 10px;
 }
