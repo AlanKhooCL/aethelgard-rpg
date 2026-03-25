@@ -19,13 +19,13 @@ const getStageInfo = (index) => {
   };
 };
 
-// --- HOGWARTS EVOLUTION STAGES ---
+// --- HOGWARTS EVOLUTION STAGES (NOW USING CSS SPRITE CLASSES) ---
 const getCharacterEvolution = (level) => {
-  if (level < 5) return { stage: "First-Year", sprite: "🪶", title: "Novice Spellcaster" };
-  if (level < 10) return { stage: "Fifth-Year", sprite: "🦉", title: "O.W.L. Student" };
-  if (level < 15) return { stage: "Prefect", sprite: "🪄", title: "Skilled Duelist" };
-  if (level < 20) return { stage: "Auror", sprite: "⚡", title: "Dark Wizard Catcher" };
-  return { stage: "Order Member", sprite: "🦡", title: "Champion of Hufflepuff" };
+  if (level < 5) return { stage: "First-Year", spriteClass: "cat-stage-1", title: "Novice Spellcaster" };
+  if (level < 10) return { stage: "Fifth-Year", spriteClass: "cat-stage-2", title: "O.W.L. Student" };
+  if (level < 15) return { stage: "Prefect", spriteClass: "cat-stage-3", title: "Skilled Duelist" };
+  if (level < 20) return { stage: "Auror", spriteClass: "cat-stage-3", title: "Dark Wizard Catcher" };
+  return { stage: "Order Member", spriteClass: "cat-stage-4", title: "Champion of Hufflepuff" };
 };
 
 // --- THE GACHA POOL (Tech/Magic Themed) ---
@@ -52,7 +52,7 @@ function App() {
   const [restMessage, setRestMessage] = useState("");
 
   // --- MENU STATE ---
-  const [activeMenu, setActiveMenu] = useState(null); // 'boss', 'equipped', or 'gacha'
+  const [activeMenu, setActiveMenu] = useState(null);
 
   // --- GACHA INVENTORY STATES ---
   const [gachaInventory, setGachaInventory] = useState([]);
@@ -224,7 +224,7 @@ function App() {
     setStageIndex(nextStage);
     localStorage.setItem('aethelgard_stage', nextStage);
     closeBattle(`Victory! You advance further into the darkness.`);
-    setActiveMenu(null); // Close boss panel after win
+    setActiveMenu(null);
   };
 
   const closeBattle = (message) => {
@@ -261,7 +261,7 @@ function App() {
             </div>
 
             <div className="battle-sprites">
-              <div className={`battle-sprite ${combatStatus === 'fighting' ? 'attacking-left' : ''}`}>{character.sprite}</div>
+              <div className={`cat-sprite battle-sprite ${character.spriteClass} ${combatStatus === 'fighting' ? 'attacking-left' : ''}`}></div>
               <div className="vs-badge">VS</div>
               <div className={`battle-sprite boss-sprite ${combatStatus === 'fighting' ? 'attacking-right' : ''}`}>☠️</div>
             </div>
@@ -303,7 +303,7 @@ function App() {
       <div className="digivice-container">
         
         <div className="digivice-screen">
-          <div className="digivice-sprite idle-bounce">{character.sprite}</div>
+          <div className={`cat-sprite digivice-sprite ${character.spriteClass}`}></div>
           <div className="digivice-stats">
             <div className="digivice-stage">{character.stage}</div>
             <div className="digivice-name">{character.title}</div>
