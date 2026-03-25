@@ -57,10 +57,10 @@ h2, h3 { font-family: var(--font-title); }
 }
 
 /* Swap the image file based on the stage */
-.cat-stage-1 { background-image: url('/stage-1.png'); }
-.cat-stage-2 { background-image: url('/stage-2.png'); }
-.cat-stage-3 { background-image: url('/stage-3.png'); }
-.cat-stage-4 { background-image: url('/stage-4.png'); }
+.cat-stage-1 { background-image: url('/stage-1-v2.png'); }
+.cat-stage-2 { background-image: url('/stage-2-v2.png'); }
+.cat-stage-3 { background-image: url('/stage-3-v2.png'); }
+.cat-stage-4 { background-image: url('/stage-4-v2.png'); }
 
 @keyframes play-sprite {
   from { background-position-x: 0px; }
