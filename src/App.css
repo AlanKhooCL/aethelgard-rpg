@@ -44,6 +44,33 @@ body {
 .subtitle { margin: 5px 0 0 0; font-size: 0.95rem; opacity: 0.8; font-family: var(--font-lore); font-style: italic; color: #ccc;}
 h2, h3 { font-family: var(--font-title); }
 
+/* --- CSS SPRITE ENGINE FOR THE CAT --- */
+.cat-sprite {
+  width: 80px;  /* The width of a single frame */
+  height: 80px; /* The height of a single frame */
+  background-image: url('/cat-sprites.png'); /* IMPORTANT: Ensure image is named this in your public folder */
+  background-size: 320px 320px; /* 4 frames across, 4 frames down */
+  animation: play-sprite 0.8s steps(4) infinite;
+  image-rendering: pixelated; /* Keeps the pixel art crispy */
+  flex-shrink: 0;
+}
+
+/* Maps to the 4 different vertical rows in your image */
+.cat-stage-1 { background-position-y: 0px; }
+.cat-stage-2 { background-position-y: -80px; }
+.cat-stage-3 { background-position-y: -160px; }
+.cat-stage-4 { background-position-y: -240px; }
+
+@keyframes play-sprite {
+  from { background-position-x: 0px; }
+  to { background-position-x: -320px; } /* Slides the image left across 4 frames */
+}
+
+/* Make the boss emoji match the scale of the cat */
+.boss-sprite {
+  font-size: 3.5rem;
+}
+
 /* --- DIGIVICE VIRTUAL PET PROFILE --- */
 .digivice-container { 
   background: var(--color-surface); 
@@ -66,9 +93,11 @@ h2, h3 { font-family: var(--font-title); }
   margin-bottom: 15px; 
 }
 
-.digivice-sprite { font-size: 3.5rem; filter: drop-shadow(2px 2px 0px #0f380f); flex-shrink: 0; }
-.idle-bounce { animation: bounce 1s infinite alternate cubic-bezier(0.5, 0.05, 1, 0.5); }
-@keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-8px); } }
+/* Adjust the specific sizing for the Digivice screen */
+.digivice-sprite { 
+  transform: scale(1.2); 
+  margin-right: 10px;
+}
 
 .digivice-stats { display: flex; flex-direction: column; color: #0f380f; font-family: var(--font-lcd); flex-grow: 1; }
 .digivice-stage { font-size: 0.5rem; margin-bottom: 5px; text-transform: uppercase; }
@@ -85,7 +114,7 @@ h2, h3 { font-family: var(--font-title); }
 .digivice-actions { 
   display: flex; 
   justify-content: flex-end; 
-  gap: 10px; /* Separates the Sync and Go Study buttons */
+  gap: 10px; 
   margin-bottom: 15px;
 }
 .train-btn { 
@@ -216,7 +245,7 @@ h2, h3 { font-family: var(--font-title); }
 .player-hp { background: var(--color-success); }
 .boss-hp { background: var(--color-danger); }
 
-.battle-sprites { display: flex; justify-content: space-around; align-items: center; margin: 20px 0; font-size: 3.5rem; }
+.battle-sprites { display: flex; justify-content: space-around; align-items: center; margin: 20px 0; }
 .vs-badge { font-family: var(--font-title); font-size: 1.2rem; color: var(--color-gold); font-weight: bold; }
 .attacking-left { animation: thrustRight 1.2s infinite; }
 .attacking-right { animation: thrustLeft 1.2s infinite; animation-delay: 0.6s; }
