@@ -19,7 +19,7 @@ const getStageInfo = (index) => {
   };
 };
 
-// --- HOGWARTS EVOLUTION STAGES (NOW USING CSS SPRITE CLASSES) ---
+// --- HOGWARTS EVOLUTION STAGES ---
 const getCharacterEvolution = (level) => {
   if (level < 5) return { stage: "First-Year", spriteClass: "cat-stage-1", title: "Novice Spellcaster" };
   if (level < 10) return { stage: "Fifth-Year", spriteClass: "cat-stage-2", title: "O.W.L. Student" };
@@ -52,13 +52,17 @@ function App() {
   const [restMessage, setRestMessage] = useState("");
 
   // --- MENU STATE ---
-  const [activeMenu, setActiveMenu] = useState(null);
+  const [activeMenu, setActiveMenu] = useState(null); 
 
   // --- GACHA INVENTORY STATES ---
   const [gachaInventory, setGachaInventory] = useState([]);
   const [equippedIds, setEquippedIds] = useState([]);
   const [totalRolls, setTotalRolls] = useState(0);
   const [summonMessage, setSummonMessage] = useState("");
+  
+  // --- MERGE STATES ---
+  const [isMergeMode, setIsMergeMode] = useState(false);
+  const [mergeSelectedIds, setMergeSelectedIds] = useState([]);
 
   // --- AUTO-BATTLER STATES ---
   const [isBattling, setIsBattling] = useState(false);
@@ -123,6 +127,8 @@ function App() {
 
   const toggleMenu = (menu) => {
     setActiveMenu(activeMenu === menu ? null : menu);
+    setIsMergeMode(false);
+    setMergeSelectedIds([]);
   };
 
   const handleSummon = () => {
@@ -146,17 +152,72 @@ function App() {
     setTotalRolls(prev => prev + 1);
     
     setSummonMessage(`Pulled ${tier.toUpperCase()}: ${newSkill.name}!`);
-    setTimeout(() => setSummonMessage(""), 4000);
+    setTimeout(() => setSummonMessage(isMergeMode ? "Select 2 identical spells to merge!" : ""), 4000);
   };
 
-  const toggleEquipSkill = (id) => {
-    if (equippedIds.includes(id)) {
-      setEquippedIds(equippedIds.filter(equippedId => equippedId !== id));
-    } else if (equippedIds.length < 3) {
-      setEquippedIds([...equippedIds, id]);
+  const toggleMergeMode = () => {
+    setIsMergeMode(!isMergeMode);
+    setMergeSelectedIds([]);
+    setSummonMessage(!isMergeMode ? "Select 2 identical spells to merge!" : "");
+  };
+
+  const handleInventoryClick = (skill) => {
+    if (isMergeMode) {
+      // MERGE LOGIC
+      if (mergeSelectedIds.includes(skill.id)) {
+        setMergeSelectedIds(prev => prev.filter(id => id !== skill.id));
+        return;
+      }
+      
+      const newSelection = [...mergeSelectedIds, skill.id];
+      if (newSelection.length === 2) {
+        const skill1 = gachaInventory.find(s => s.id === newSelection[0]);
+        const skill2 = gachaInventory.find(s => s.id === newSelection[1]);
+
+        if (skill1.name !== skill2.name) {
+          setSummonMessage("Synthesis Failed! Spells must be identical.");
+          setTimeout(() => setSummonMessage("Select 2 identical spells to merge!"), 3000);
+          setMergeSelectedIds([]);
+          return;
+        }
+
+        // Process Merge & Mutation
+        const tiers = ['common', 'rare', 'epic', 'legendary'];
+        const currentTierIndex = tiers.indexOf(skill1.tier);
+        let nextTierIndex = currentTierIndex;
+        
+        // 30% Chance to upgrade to the next tier (if not already legendary)
+        if (Math.random() < 0.30 && currentTierIndex < 3) {
+          nextTierIndex++;
+        }
+
+        const targetTier = tiers[nextTierIndex];
+        const targetPool = SKILL_POOL[targetTier];
+        const newSpell = targetPool[Math.floor(Math.random() * targetPool.length)];
+        const mergedSkill = { ...newSpell, tier: targetTier, id: Date.now().toString() };
+
+        // Update arrays
+        setGachaInventory(prev => [mergedSkill, ...prev.filter(s => s.id !== newSelection[0] && s.id !== newSelection[1])]);
+        setEquippedIds(prev => prev.filter(id => id !== newSelection[0] && id !== newSelection[1]));
+        
+        const isUpgrade = nextTierIndex > currentTierIndex;
+        setSummonMessage(isUpgrade ? `✨ MEGA MERGE! Upgraded to ${targetTier.toUpperCase()}: ${mergedSkill.name}! ✨` : `Merged into: ${mergedSkill.name}!`);
+        setTimeout(() => setSummonMessage("Select 2 identical spells to merge!"), 4000);
+        
+        setMergeSelectedIds([]);
+      } else {
+        setMergeSelectedIds(newSelection);
+      }
     } else {
-      setBattleMessage("You can only equip 3 spells at a time.");
-      setTimeout(() => setBattleMessage(""), 3000);
+      // EQUIP LOGIC
+      if (equippedIds.includes(skill.id)) {
+        setEquippedIds(equippedIds.filter(equippedId => equippedId !== skill.id));
+      } else if (equippedIds.length < 3) {
+        setEquippedIds([...equippedIds, skill.id]);
+      } else {
+        setSummonMessage("You can only equip 3 spells at a time.");
+        setTimeout(() => setSummonMessage(""), 3000);
+      }
     }
   };
 
@@ -295,8 +356,9 @@ function App() {
       )}
 
       <header className="game-header">
-        <h1>Tracker of Magic</h1>
-        <p className="subtitle">{currentStage.town}</p>
+        <h1>M.O.F.U.</h1>
+        <p className="subtitle">Mystic Order of Familiar Unity</p>
+        <p className="subtitle" style={{marginTop: '4px', opacity: 0.6}}>{currentStage.town}</p>
       </header>
 
       {/* --- DIGIVICE VIRTUAL PET PROFILE --- */}
@@ -406,20 +468,28 @@ function App() {
         <div className="panel-section gacha-section fade-in">
           <div className="gacha-header">
             <h2>Grimoire Summoning</h2>
-            <div className="crystal-count">💎 {manaCrystals} Crystals</div>
+            <div className="crystal-count">💎 {manaCrystals}</div>
           </div>
           <p className="gacha-lore">Earn crystals by completing chapters in your Learning Center.</p>
           
-          <button 
-            className={`summon-btn ${manaCrystals > 0 ? 'active' : 'disabled'}`} 
-            onClick={handleSummon}
-            disabled={manaCrystals <= 0}
-          >
-            Summon Spell (1 💎)
-          </button>
+          <div className="gacha-actions">
+            <button 
+              className={`summon-btn ${manaCrystals > 0 && !isMergeMode ? 'active' : 'disabled'}`} 
+              onClick={handleSummon}
+              disabled={manaCrystals <= 0 || isMergeMode}
+            >
+              Summon (1 💎)
+            </button>
+            <button 
+              className={`merge-btn ${isMergeMode ? 'active' : ''}`} 
+              onClick={toggleMergeMode}
+            >
+              {isMergeMode ? 'Cancel' : '🔀 Merge'}
+            </button>
+          </div>
           
           {summonMessage && (
-            <div className={`summon-message ${summonMessage.includes('LEGENDARY') ? 'legendary-pull' : ''}`}>
+            <div className={`summon-message ${summonMessage.includes('MEGA') ? 'legendary-pull' : ''}`}>
               {summonMessage}
             </div>
           )}
@@ -428,16 +498,17 @@ function App() {
             {gachaInventory.length > 0 ? (
               gachaInventory.map((skill) => {
                 const isEquipped = equippedIds.includes(skill.id);
+                const isSelectedForMerge = mergeSelectedIds.includes(skill.id);
                 return (
                   <div 
                     key={skill.id} 
-                    className={`inventory-item tier-${skill.tier} ${isEquipped ? 'equipped-item' : ''}`} 
-                    onClick={() => toggleEquipSkill(skill.id)}
+                    className={`inventory-item tier-${skill.tier} ${isEquipped && !isMergeMode ? 'equipped-item' : ''} ${isSelectedForMerge ? 'merge-selected' : ''}`} 
+                    onClick={() => handleInventoryClick(skill)}
                   >
                     <span className="inv-icon">{skill.icon}</span>
                     <span className="inv-name">{skill.name}</span>
                     <span className="inv-power">+{skill.power}</span>
-                    {isEquipped && <div className="equipped-badge">E</div>}
+                    {isEquipped && !isMergeMode && <div className="equipped-badge">E</div>}
                   </div>
                 );
               })
