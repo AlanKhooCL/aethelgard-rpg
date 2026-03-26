@@ -2,13 +2,13 @@
 
 :root {
   /* HUFFLEPUFF COLOR PALETTE */
-  --color-bg: #0a0a0a;          /* Pitch Black */
-  --color-surface: #1c1c1c;     /* Charcoal/Dark Gray */
-  --color-border: #FFDB00;      /* Hufflepuff Yellow/Gold */
+  --color-bg: #0a0a0a;          
+  --color-surface: #1c1c1c;     
+  --color-border: #FFDB00;      
   --color-gold: #FFDB00;
-  --color-accent: #e5c100;      /* Slightly darker yellow for hovers */
-  --color-danger: #d9534f;      /* Muted red for errors/damage */
-  --color-success: #5cb85c;     /* Muted green for success/HP */
+  --color-accent: #e5c100;      
+  --color-danger: #d9534f;      
+  --color-success: #5cb85c;     
   
   --font-title: 'Cinzel Decorative', serif;
   --font-body: 'Cinzel', serif;
@@ -25,12 +25,12 @@
 html, body { 
   margin: 0; 
   padding: 0;
-  background-color: var(--color-bg); /* Forces the absolute bottom layer to be pitch black */
+  background-color: var(--color-bg); 
   color: #e2e2e8; 
   font-family: var(--font-body); 
   min-height: 100vh;
   width: 100%;
-  overflow-x: hidden; /* Destroys those white lines on the left and right */
+  overflow-x: hidden; 
 }
 
 body {
@@ -47,25 +47,22 @@ body {
 }
 
 .game-header { text-align: center; margin-bottom: 20px; }
-.game-header h1 { margin: 0; font-size: 1.8rem; color: var(--color-gold); font-family: var(--font-title); text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
-.subtitle { margin: 5px 0 0 0; font-size: 0.95rem; opacity: 0.8; font-family: var(--font-lore); font-style: italic; color: #ccc;}
+.game-header h1 { margin: 0; font-size: 2.2rem; color: var(--color-gold); font-family: var(--font-title); text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+.subtitle { margin: 0; font-size: 0.95rem; font-family: var(--font-lore); font-style: italic; color: #ccc;}
 h2, h3 { font-family: var(--font-title); }
 
-/* --- CSS SPRITE ENGINE (OPTION 2: THE IDLE BOUNCE) --- */
+/* --- CSS SPRITE ENGINE (THE IDLE BOUNCE) --- */
 .cat-sprite {
   width: 60px;  
   height: 60px; 
   background-size: 240px 60px; 
-  background-position: 0px 0px; /* Locks the view to ONLY the first cat frame! */
+  background-position: 0px 0px; 
   background-repeat: no-repeat;
   image-rendering: pixelated; 
   flex-shrink: 0;
-  
-  /* The smooth, classic virtual pet idle bounce */
   animation: cat-idle 1s infinite alternate ease-in-out;
 }
 
-/* We still swap the image file based on the stage */
 .cat-stage-1 { background-image: url('/stage-1-v2.png'); }
 .cat-stage-2 { background-image: url('/stage-2-v2.png'); }
 .cat-stage-3 { background-image: url('/stage-3-v2.png'); }
@@ -73,13 +70,10 @@ h2, h3 { font-family: var(--font-title); }
 
 @keyframes cat-idle {
   from { transform: translateY(0px); }
-  to { transform: translateY(-5px); } /* Gently bobs up and down */
+  to { transform: translateY(-5px); } 
 }
 
-/* Make the boss emoji match the scale of the cat */
-.boss-sprite {
-  font-size: 3rem; 
-}
+.boss-sprite { font-size: 3rem; }
 
 /* --- DIGIVICE VIRTUAL PET PROFILE --- */
 .digivice-container { 
@@ -103,89 +97,31 @@ h2, h3 { font-family: var(--font-title); }
   margin-bottom: 15px; 
 }
 
-.digivice-sprite { 
-  margin-right: 10px;
-}
+.digivice-sprite { margin-right: 10px; }
 
 .digivice-stats { display: flex; flex-direction: column; color: #0f380f; font-family: var(--font-lcd); flex-grow: 1; }
 .digivice-stage { font-size: 0.5rem; margin-bottom: 5px; text-transform: uppercase; }
 .digivice-name { font-size: 0.7rem; margin-bottom: 8px; font-weight: bold; line-height: 1.4; }
 .digivice-level { font-size: 0.75rem; }
 
-/* LCD EXP BAR */
 .lcd-exp-container { margin-top: 10px; width: 100%; }
 .lcd-exp-labels { display: flex; justify-content: space-between; font-size: 0.5rem; margin-bottom: 4px; }
 .lcd-exp-bg { width: 100%; height: 8px; background-color: rgba(15, 56, 15, 0.2); border: 1px solid #0f380f; border-radius: 2px; overflow: hidden; }
 .lcd-exp-fill { height: 100%; background-color: #0f380f; transition: width 1.2s cubic-bezier(0.25, 0.1, 0.25, 1); }
 
-/* Digivice Action & Menu */
-.digivice-actions { 
-  display: flex; 
-  justify-content: flex-end; 
-  gap: 10px; 
-  margin-bottom: 15px;
-}
-.train-btn { 
-  background: var(--color-gold); 
-  color: #111; 
-  text-decoration: none; 
-  padding: 8px 16px; 
-  border-radius: 20px; 
-  font-size: 0.85rem; 
-  font-family: var(--font-title); 
-  font-weight: bold; 
-  border: 2px solid #000; 
-  box-shadow: 0 4px 0 #000; 
-  transition: all 0.1s; 
-  cursor: pointer;
-}
+.digivice-actions { display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 15px; }
+.train-btn { background: var(--color-gold); color: #111; text-decoration: none; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-family: var(--font-title); font-weight: bold; border: 2px solid #000; box-shadow: 0 4px 0 #000; transition: all 0.1s; cursor: pointer; }
 .train-btn:active { transform: translateY(4px); box-shadow: 0 0 0 #000; }
 
-.digivice-menu {
-  display: flex;
-  justify-content: space-around;
-  border-top: 2px solid #333;
-  padding-top: 15px;
-}
-
-.menu-btn {
-  background: #111;
-  color: #fff;
-  border: 2px solid #444;
-  border-radius: 50%;
-  width: 55px;
-  height: 55px;
-  font-size: 1.5rem;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.5);
-}
-
+.digivice-menu { display: flex; justify-content: space-around; border-top: 2px solid #333; padding-top: 15px; }
+.menu-btn { background: #111; color: #fff; border: 2px solid #444; border-radius: 50%; width: 55px; height: 55px; font-size: 1.5rem; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.5); }
 .menu-btn:hover { border-color: var(--color-gold); }
-.menu-btn.active {
-  background: var(--color-gold);
-  border-color: #fff;
-  transform: scale(1.1);
-  box-shadow: 0 0 15px rgba(255, 219, 0, 0.4);
-}
+.menu-btn.active { background: var(--color-gold); border-color: #fff; transform: scale(1.1); box-shadow: 0 0 15px rgba(255, 219, 0, 0.4); }
 
-/* --- EXPANDABLE PANELS --- */
-.panel-section { 
-  background-color: var(--color-surface); 
-  border-radius: 12px; 
-  padding: 20px; 
-  margin-bottom: 30px; 
-  border: 1px solid #333; 
-  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-}
-
+.panel-section { background-color: var(--color-surface); border-radius: 12px; padding: 20px; margin-bottom: 30px; border: 1px solid #333; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
 .fade-in { animation: fadeIn 0.3s ease-out forwards; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
-/* BOSS CARD */
 .boss-card { border-left: 4px solid var(--color-danger); }
 .boss-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
 .boss-name { font-family: var(--font-title); font-size: 1.2rem; color: var(--color-danger); margin: 0; }
@@ -194,7 +130,6 @@ h2, h3 { font-family: var(--font-title); }
 .challenge-btn { width: 100%; background-color: transparent; border: 2px solid var(--color-danger); color: #ffcccc; padding: 12px; border-radius: 6px; cursor: pointer; font-family: var(--font-title); font-size: 1.1rem; transition: all 0.3s ease; }
 .challenge-btn:hover { background-color: var(--color-danger); color: #fff; }
 
-/* EQUIPPED MAGIC */
 .equipped-header-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 20px; }
 .equipped-header-row h2 { margin: 0; font-size: 1.2rem; color: var(--color-gold); }
 .inn-btn { background: transparent; border: 1px solid #555; color: #ccc; padding: 6px 12px; border-radius: 4px; font-family: var(--font-body); cursor: pointer; transition: 0.2s; }
@@ -205,30 +140,45 @@ h2, h3 { font-family: var(--font-title); }
 .spell-name { font-size: 1.1rem; color: #fff; }
 .spell-power { font-size: 0.8rem; font-family: monospace; color: #aaa; }
 
-/* Tier borders for equipped cards */
 .spell-card.tier-common { border: 1px solid var(--tier-common); }
 .spell-card.tier-rare { border: 1px solid var(--tier-rare); }
 .spell-card.tier-epic { border: 1px solid var(--tier-epic); }
 .spell-card.tier-legendary { border: 1px solid var(--tier-legendary); box-shadow: inset 0 0 20px rgba(255, 219, 0, 0.1); }
 
-/* GACHA SUMMONING ALTAR */
 .gacha-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
 .gacha-header h2 { margin: 0; font-size: 1.2rem; color: var(--color-gold); }
 .crystal-count { font-size: 1.1rem; color: #fff; background: #111; padding: 5px 10px; border-radius: 6px; border: 1px solid #333; }
 .gacha-lore { font-size: 0.9rem; color: #aaa; font-style: italic; margin-bottom: 20px; }
 
-.summon-btn { width: 100%; padding: 15px; border-radius: 8px; font-family: var(--font-title); font-size: 1.1rem; cursor: pointer; transition: all 0.2s; margin-bottom: 15px; border: none; }
+/* GACHA BUTTON ROW */
+.gacha-actions { display: flex; gap: 10px; margin-bottom: 15px; }
+.summon-btn { flex: 2; padding: 15px; border-radius: 8px; font-family: var(--font-title); font-size: 1.1rem; cursor: pointer; transition: all 0.2s; border: none; }
 .summon-btn.active { background: var(--color-gold); color: #111; font-weight: bold; box-shadow: 0 4px 15px rgba(255, 219, 0, 0.2); }
 .summon-btn.active:active { transform: scale(0.98); }
 .summon-btn.disabled { background: #222; color: #555; cursor: not-allowed; border: 1px solid #333; }
 
+.merge-btn { flex: 1; padding: 15px; border-radius: 8px; font-family: var(--font-title); font-size: 1rem; cursor: pointer; transition: all 0.2s; border: 2px solid #444; background: #111; color: #fff; }
+.merge-btn.active { border-color: #00ffcc; background: rgba(0, 255, 204, 0.1); color: #00ffcc; font-weight: bold; box-shadow: 0 0 10px rgba(0, 255, 204, 0.3); }
+
 .summon-message { text-align: center; padding: 10px; background: #111; border-radius: 6px; margin-bottom: 15px; font-weight: bold; animation: logFadeIn 0.3s; border: 1px solid #333;}
-.legendary-pull { color: var(--color-gold); text-shadow: 0 0 10px var(--color-gold); font-size: 1.2rem; }
+.legendary-pull { color: var(--color-gold); text-shadow: 0 0 10px var(--color-gold); font-size: 1.1rem; border-color: var(--color-gold); }
 
 .inventory-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; max-height: 250px; overflow-y: auto; padding-right: 5px; }
-.inventory-item { background: #111; border: 2px solid; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; align-items: center; text-align: center; cursor: pointer; position: relative; transition: transform 0.1s; }
+.inventory-item { background: #111; border: 2px solid; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; align-items: center; text-align: center; cursor: pointer; position: relative; transition: all 0.2s; }
 .inventory-item:active { transform: scale(0.95); }
 .inventory-item.equipped-item { opacity: 0.4; }
+
+/* Glowing highlight for merge selection */
+.inventory-item.merge-selected {
+  border-color: #00ffcc;
+  box-shadow: 0 0 15px rgba(0, 255, 204, 0.5);
+  transform: scale(1.05);
+  animation: pulse-merge 1s infinite alternate;
+}
+@keyframes pulse-merge {
+  from { box-shadow: 0 0 5px rgba(0, 255, 204, 0.3); }
+  to { box-shadow: 0 0 20px rgba(0, 255, 204, 0.8); }
+}
 
 .inv-icon { font-size: 1.5rem; margin-bottom: 5px; }
 .inv-name { font-size: 0.8rem; color: #eee; margin-bottom: 5px; }
