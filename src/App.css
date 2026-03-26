@@ -51,7 +51,7 @@ body {
 .subtitle { margin: 0; font-size: 0.95rem; font-family: var(--font-lore); font-style: italic; color: #ccc;}
 h2, h3 { font-family: var(--font-title); }
 
-/* --- CSS SPRITE ENGINE (THE IDLE BOUNCE) --- */
+/* --- CSS SPRITE ENGINE (ADVANCED ANIMATION) --- */
 .cat-sprite {
   width: 60px;  
   height: 60px; 
@@ -60,20 +60,52 @@ h2, h3 { font-family: var(--font-title); }
   background-repeat: no-repeat;
   image-rendering: pixelated; 
   flex-shrink: 0;
-  animation: cat-idle 1s infinite alternate ease-in-out;
+  
+  /* Adds a shadow underneath that pulses as the cat moves */
+  filter: drop-shadow(0px 8px 2px rgba(0,0,0,0.5));
+  
+  /* The new, lively animation */
+  animation: cat-alive 1.2s infinite ease-in-out;
+  transform-origin: bottom center; /* Anchors the feet so the body moves naturally */
 }
 
+/* We still swap the image file based on the stage */
 .cat-stage-1 { background-image: url('/stage-1-v2.png'); }
 .cat-stage-2 { background-image: url('/stage-2-v2.png'); }
 .cat-stage-3 { background-image: url('/stage-3-v2.png'); }
 .cat-stage-4 { background-image: url('/stage-4-v2.png'); }
 
-@keyframes cat-idle {
-  from { transform: translateY(0px); }
-  to { transform: translateY(-5px); } 
+/* This creates a "Squash and Stretch" effect mixed with a slight rock.
+  It makes a static image look like it's breathing and shifting its weight.
+*/
+@keyframes cat-alive {
+  0% { 
+    transform: scale(1, 1) translateY(0px) rotate(0deg); 
+  }
+  25% { 
+    transform: scale(0.95, 1.05) translateY(-4px) rotate(-2deg); 
+  }
+  50% { 
+    transform: scale(1.02, 0.98) translateY(0px) rotate(0deg); 
+  }
+  75% { 
+    transform: scale(0.95, 1.05) translateY(-4px) rotate(2deg); 
+  }
+  100% { 
+    transform: scale(1, 1) translateY(0px) rotate(0deg); 
+  }
 }
 
-.boss-sprite { font-size: 3rem; }
+.boss-sprite { 
+  font-size: 3rem; 
+  animation: boss-float 2s infinite ease-in-out;
+}
+
+/* Gives the boss a menacing, slower floating animation */
+@keyframes boss-float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
 
 /* --- DIGIVICE VIRTUAL PET PROFILE --- */
 .digivice-container { 
