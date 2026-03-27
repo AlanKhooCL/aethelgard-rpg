@@ -25,12 +25,23 @@ const SKILL_POOL = {
   ]
 };
 
+const EVOLUTIONS = [
+  { stage: "First-Year", cls: "cat-stage-1", lvl: 1 },
+  { stage: "Fifth-Year", cls: "cat-stage-2", lvl: 5 },
+  { stage: "Prefect", cls: "cat-stage-3", lvl: 10 },
+  { stage: "Auror", cls: "cat-stage-3", lvl: 15 },
+  { stage: "Order Member", cls: "cat-stage-4", lvl: 20 }
+];
+
 const getCharacterEvolution = (level) => {
-  if (level < 5) return { stage: "First-Year", spriteClass: "cat-stage-1", title: "Novice" };
-  if (level < 10) return { stage: "Fifth-Year", spriteClass: "cat-stage-2", title: "O.W.L." };
-  if (level < 15) return { stage: "Prefect", spriteClass: "cat-stage-3", title: "Duelist" };
-  if (level < 20) return { stage: "Auror", spriteClass: "cat-stage-3", title: "Catcher" };
-  return { stage: "Order Member", spriteClass: "cat-stage-4", title: "Champion" };
+  let currentEvo = EVOLUTIONS[0];
+  for (let i = EVOLUTIONS.length - 1; i >= 0; i--) {
+    if (level >= EVOLUTIONS[i].lvl) {
+      currentEvo = EVOLUTIONS[i];
+      break;
+    }
+  }
+  return currentEvo;
 };
 
 function App() {
@@ -41,8 +52,8 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [sysMessage, setSysMessage] = useState("");
 
-  // --- PET & RPG STATES ---
-  const [pet, setPet] = useState({ name: "MIKAN", hunger: 80, happiness: 80, energy: 80, exp: 0, level: 1, rebirths: 0 });
+  // --- PET & RPG STATES (Stripped of Hunger/Energy) ---
+  const [pet, setPet] = useState({ name: "MIKAN", exp: 0, level: 1, rebirths: 0 });
   const [bosses, setBosses] = useState([
     { id: 'arlong', name: 'Saw-Tooth Arlong', emoji: '🦈', hp: 120, atk: 15, def: 5, reqLevel: 1, lore: 'A ruthless fish-man pirate.' },
     { id: 'crocodile', name: 'Sir Crocodile', emoji: '🐊', hp: 300, atk: 25, def: 15, reqLevel: 5, lore: 'Leader of Baroque Works.' }
@@ -99,18 +110,6 @@ function App() {
       setIsLoading(false);
     };
     loadData();
-
-    // Stat Decay
-    const decay = setInterval(() => {
-      setPet(p => ({
-        ...p,
-        hunger: Math.max(0, p.hunger - 0.5),
-        happiness: Math.max(0, p.happiness - 0.5),
-        energy: Math.max(0, p.energy - 0.25)
-      }));
-    }, 60000);
-
-    return () => clearInterval(decay);
   }, []);
 
   // Auto-save data
@@ -132,13 +131,6 @@ function App() {
     setTimeout(() => setSysMessage(""), 3000);
   };
 
-  const syncData = async () => {
-    notify("Syncing Sheets...");
-    const data = await fetchAethelgardData();
-    setSheetsData(data);
-    setTimeout(() => notify("Sync Complete!"), 2000);
-  };
-
   const gainExp = (amount) => {
     setPet(p => {
       const newExp = p.exp + amount;
@@ -147,12 +139,16 @@ function App() {
     });
   };
 
+  const patPet = () => {
+    notify(`You patted ${pet.name}! +2 EXP`);
+    gainExp(2);
+  };
+
   // --- REBIRTH SYSTEM ---
   const handleRebirth = () => {
     if (pet.level < 20) return;
     setPet(p => ({ ...p, level: 1, exp: 0, rebirths: (p.rebirths || 0) + 1 }));
     
-    // Give guaranteed legendary
     const pool = SKILL_POOL['legendary'];
     const pulledSkill = { ...pool[Math.floor(Math.random() * pool.length)], tier: 'legendary', id: Date.now().toString() };
     setGachaInventory(prev => [pulledSkill, ...prev]);
@@ -210,59 +206,23 @@ function App() {
     setChatLog(prev => [...prev, { sender: 'user', text: userMsg }]);
     
     try {
-      const prompt = `You are my virtual pet cat named MIKAN, a Golden British Shorthair. You are at level ${pet.level}. My stats are: Hunger ${Math.floor(pet.hunger)}%, Happiness ${Math.floor(pet.happiness)}%, Energy ${Math.floor(pet.energy)}%. The user says: "${userMsg}". Respond in character in 1 short sentence. Use plain English. Do not output markdown, symbols, or code blocks. Use emojis.`;
+      const prompt = `You are my virtual pet cat named MIKAN, a Golden British Shorthair. You are at level ${pet.level}. The user says: "${userMsg}". Respond in character. Give a friendly, engaging response of 2 to 3 sentences. Do not give one-word answers. Use plain English and emojis. Do not output markdown or code formatting.`;
       
       const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiKey.trim()}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: 100, temperature: 0.7 } })
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: 150, temperature: 0.7 } })
       });
       
       const data = await res.json();
       if (data.error) throw new Error(data.error.message);
-      const reply = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "Meow?";
+      const reply = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "Meow!";
       
       setChatLog(prev => [...prev, { sender: 'pet', text: reply }]);
-      gainExp(5);
-      setPet(p => ({ ...p, happiness: Math.min(100, p.happiness + 10) }));
+      gainExp(25); // Chatting gives big EXP now!
     } catch (e) {
       setChatLog(prev => [...prev, { sender: 'pet', text: `*hisses* Connection failed: ${e.message}` }]);
     }
-  };
-
-  const handlePetAction = (action) => {
-    setPet(p => {
-      let next = { ...p };
-      if (action === 'feed') {
-        if (p.hunger >= 100) return p;
-        next.hunger = Math.min(100, p.hunger + 20);
-        next.happiness = Math.min(100, p.happiness + 5);
-        notify(`Fed ${pet.name}! +15 EXP`);
-        gainExp(15);
-      } else if (action === 'play') {
-        if (p.energy < 10) return p;
-        next.happiness = Math.min(100, p.happiness + 20);
-        next.energy = Math.max(0, p.energy - 10);
-        next.hunger = Math.max(0, p.hunger - 5);
-        notify("Played! +20 EXP");
-        gainExp(20);
-      } else if (action === 'sleep') {
-        if (p.energy >= 100) return p;
-        next.energy = Math.min(100, p.energy + 40);
-        notify("Resting... +10 EXP");
-        gainExp(10);
-      }
-      return next;
-    });
-  };
-
-  const dpadAction = (dir) => {
-    if (dir === 'right') {
-      notify("Exploring... +10 EXP");
-      gainExp(10);
-      setPet(p => ({...p, energy: Math.max(0, p.energy - 2)}));
-    } else if (dir === 'up') { syncData(); } 
-    else { notify(`Looking ${dir}...`); }
   };
 
   const handleSummon = () => {
@@ -355,6 +315,10 @@ function App() {
   const character = getCharacterEvolution(pet.level);
   const manaCrystals = Math.max(0, sheetsData.completedChaptersCount - totalRolls);
   const equippedSkills = gachaInventory.filter(skill => equippedIds.includes(skill.id));
+  
+  const baseExpForCurrentLevel = Math.pow(pet.level - 1, 2) * 100;
+  const baseExpForNextLevel = Math.pow(pet.level, 2) * 100;
+  const progressPercentage = Math.min(((pet.exp - baseExpForCurrentLevel) / (baseExpForNextLevel - baseExpForCurrentLevel)) * 100, 100);
 
   return (
     <div className="rpg-container">
@@ -364,7 +328,7 @@ function App() {
           <span className="brand">POCKETPAL OS</span>
           <div className="led"></div>
           <div className="top-nav-actions">
-            <a href="https://alankhoocl.github.io/AI-Learning-Management/" target="_blank" rel="noopener noreferrer" className="settings-btn" style={{textDecoration: 'none'}}>A.L.A.N</a>
+            <a href="https://alankhoocl.github.io/AI-Learning-Management/" target="_blank" rel="noopener noreferrer" className="alan-btn">📚 A.L.A.N</a>
             <button className="settings-btn" onClick={() => setActiveMenu('settings')}>⚙</button>
           </div>
         </div>
@@ -387,23 +351,45 @@ function App() {
             </div>
 
             <div className="view-area">
+              
+              {/* HOME MENU */}
               {activeMenu === 'home' && (
                 <div className="tab-view active">
-                  <div className="pet-stage">
-                    <div className="stage-badge">— {character.stage} —</div>
-                    <div className={`cat-sprite ${character.spriteClass}`}></div>
+                  <div className="pet-stage" onClick={patPet}>
+                    <div className={`cat-sprite ${character.cls}`}></div>
                   </div>
-                  <div className="stats-panel">
-                    <div className="stat-row"><span className="stat-label">HNGR</span><div className="stat-bar-track"><div className="stat-bar-fill orange" style={{width: `${pet.hunger}%`}}></div></div></div>
-                    <div className="stat-row"><span className="stat-label">HPPY</span><div className="stat-track stat-bar-track"><div className="stat-bar-fill yellow" style={{width: `${pet.happiness}%`}}></div></div></div>
-                    <div className="stat-row"><span className="stat-label">ENRG</span><div className="stat-track stat-bar-track"><div className="stat-bar-fill blue" style={{width: `${pet.energy}%`}}></div></div></div>
+                  
+                  <div className="exp-bar-container">
+                    <div className="exp-labels"><span>EXP</span><span>{pet.exp} / {baseExpForNextLevel}</span></div>
+                    <div className="exp-track"><div className="exp-fill" style={{width: `${progressPercentage}%`}}></div></div>
                   </div>
+
+                  <div className="evolution-tracker">
+                    <div className="evo-title">EVOLUTION PATH</div>
+                    <div className="evo-path">
+                      {EVOLUTIONS.map((evo) => {
+                        const isUnlocked = pet.level >= evo.lvl;
+                        const isCurrent = character.stage === evo.stage;
+                        return (
+                          <div key={evo.stage} className={`evo-step ${isUnlocked ? 'unlocked' : 'locked'} ${isCurrent ? 'active-step' : ''}`}>
+                             <div className={`cat-sprite-mini ${evo.cls}`}></div>
+                             <div className="evo-info">
+                               <span className="evo-name">{evo.stage}</span>
+                               <span className="evo-lvl">LV.{evo.lvl}</span>
+                             </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+
                   {pet.level >= 20 && (
                     <button className="rebirth-btn" onClick={handleRebirth}>✨ REBIRTH (LVL 20+) ✨</button>
                   )}
                 </div>
               )}
 
+              {/* CHAT MENU */}
               {activeMenu === 'chat' && (
                 <div className="tab-view active chat-view">
                   <div className="chat-messages">
@@ -416,6 +402,7 @@ function App() {
                 </div>
               )}
 
+              {/* GACHA MENU */}
               {activeMenu === 'gacha' && (
                 <div className="tab-view active gacha-view">
                   <div className="gacha-top">
@@ -439,6 +426,7 @@ function App() {
                 </div>
               )}
 
+              {/* SETTINGS MENU */}
               {activeMenu === 'settings' && (
                 <div className="tab-view active settings-view">
                   <div style={{color:'var(--pixel-yellow)', fontSize:'6px', textAlign:'center', marginBottom:'10px'}}>SETTINGS</div>
@@ -458,6 +446,7 @@ function App() {
                 </div>
               )}
 
+              {/* BOSS MENU */}
               {activeMenu === 'boss' && !battleState && (
                 <div className="tab-view active boss-select-screen">
                   <div className="boss-list-title">⚔ WANTED BOARD ⚔</div>
@@ -478,12 +467,13 @@ function App() {
                 </div>
               )}
 
+              {/* BATTLE SCREEN */}
               {activeMenu === 'battle' && battleState && (
                 <div className="tab-view active battle-screen">
                   <div className="battle-header">VS {battleState.boss.name}</div>
                   <div className="combatants">
                     <div className="combatant">
-                      <div className={`cat-sprite ${character.spriteClass}`} style={{transform: 'scale(0.8)'}}></div>
+                      <div className={`cat-sprite ${character.cls}`} style={{transform: 'scale(0.8)'}}></div>
                       <div className="hp-track"><div className="hp-fill pet-hp" style={{width: `${(battleState.petHp/battleState.petMaxHp)*100}%`}}></div></div>
                     </div>
                     <div className="vs-badge">VS</div>
@@ -512,20 +502,6 @@ function App() {
               )}
 
             </div>
-          </div>
-        </div>
-
-        <div className="controls">
-          <div className="dpad">
-            <div></div><button className="dpad-btn" onClick={() => dpadAction('up')}>▲</button><div></div>
-            <button className="dpad-btn" onClick={() => dpadAction('left')}>◀</button><div className="dpad-center"></div><button className="dpad-btn" onClick={() => dpadAction('right')}>▶</button>
-            <div></div><button className="dpad-btn" onClick={() => dpadAction('down')}>▼</button><div></div>
-          </div>
-          <div className="action-buttons">
-            <button className="action-btn btn-feed" onClick={() => handlePetAction('feed')}>🍖</button>
-            <button className="action-btn btn-play" onClick={() => handlePetAction('play')}>🧶</button>
-            <button className="action-btn btn-sleep" onClick={() => handlePetAction('sleep')}>💤</button>
-            <button className="action-btn btn-talk" onClick={() => setActiveMenu('chat')}>💬</button>
           </div>
         </div>
       </div>
