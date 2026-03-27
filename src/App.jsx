@@ -2,6 +2,20 @@ import { useEffect, useState, useRef } from 'react';
 import { fetchAethelgardData } from './api/grimoire';
 import './App.css';
 
+// --- CHINESE HISTORY FACTS ---
+const CHINA_HISTORY_FACTS = [
+  "The Great Wall of China is not a single continuous wall, but a series of walls and fortifications built by different dynasties over two millennia.",
+  "The Terracotta Army was discovered by local farmers in 1974. It contains over 8,000 unique, life-sized soldiers built to protect China's first emperor in the afterlife.",
+  "Paper, printing, the compass, and gunpowder are known as the Four Great Inventions of ancient China, profoundly shaping the modern world.",
+  "The Forbidden City in Beijing contains 9,999 rooms. The number 9 is associated with the Emperor, representing longevity and eternity.",
+  "During the Tang Dynasty, the civil service examinations were deeply rooted in Confucian texts, creating a meritocratic system for government officials.",
+  "Empress Wu Zetian is the only woman in the history of China to assume the title of Empress Regnant, ruling during the Tang Dynasty.",
+  "The Silk Road was established during the Han Dynasty, creating a massive trade network that connected China with the Mediterranean.",
+  "Tea was discovered in China. According to legend, Emperor Shen Nong discovered it in 2737 BCE when tea leaves accidentally blew into his boiling water.",
+  "The Tang Dynasty (618–907 AD) is often considered the golden age of Chinese poetry and art, producing legendary poets like Li Bai and Du Fu.",
+  "Zheng He was a legendary Ming Dynasty admiral who led seven epic voyages of discovery, reaching as far as the Middle East and Africa long before European explorers."
+];
+
 // --- ONE PIECE GACHA POOL ---
 const SKILL_POOL = {
   common: [
@@ -45,37 +59,30 @@ const getCharacterEvolution = (level) => {
 };
 
 function App() {
-  // --- SETTINGS & DATA STATES ---
   const [apiKey, setApiKey] = useState("");
   const [geminiModel, setGeminiModel] = useState("gemini-3.0-flash-preview");
   const [sheetsData, setSheetsData] = useState({ completedChaptersCount: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [sysMessage, setSysMessage] = useState("");
 
-  // --- PET & RPG STATES (Stripped of Hunger/Energy) ---
   const [pet, setPet] = useState({ name: "MIKAN", exp: 0, level: 1, rebirths: 0 });
   const [bosses, setBosses] = useState([
     { id: 'arlong', name: 'Saw-Tooth Arlong', emoji: '🦈', hp: 120, atk: 15, def: 5, reqLevel: 1, lore: 'A ruthless fish-man pirate.' },
     { id: 'crocodile', name: 'Sir Crocodile', emoji: '🐊', hp: 300, atk: 25, def: 15, reqLevel: 5, lore: 'Leader of Baroque Works.' }
   ]);
   
-  // --- UI STATES ---
   const [activeMenu, setActiveMenu] = useState('home'); 
-  const [isMergeMode, setIsMergeMode] = useState(false);
-  const [mergeSelectedIds, setMergeSelectedIds] = useState([]);
   const [isGeneratingBoss, setIsGeneratingBoss] = useState(false);
 
-  // --- INVENTORY STATES ---
   const [gachaInventory, setGachaInventory] = useState([]);
   const [equippedIds, setEquippedIds] = useState([]);
   const [totalRolls, setTotalRolls] = useState(0);
 
-  // --- BATTLE STATES ---
   const [battleState, setBattleState] = useState(null);
+  const [postBattleFact, setPostBattleFact] = useState(null);
   const [combatLog, setCombatLog] = useState([]);
   const logContainerRef = useRef(null);
 
-  // --- CHAT STATES ---
   const [chatInput, setChatInput] = useState("");
   const [chatLog, setChatLog] = useState([]);
 
@@ -144,19 +151,15 @@ function App() {
     gainExp(2);
   };
 
-  // --- REBIRTH SYSTEM ---
   const handleRebirth = () => {
     if (pet.level < 20) return;
     setPet(p => ({ ...p, level: 1, exp: 0, rebirths: (p.rebirths || 0) + 1 }));
-    
     const pool = SKILL_POOL['legendary'];
     const pulledSkill = { ...pool[Math.floor(Math.random() * pool.length)], tier: 'legendary', id: Date.now().toString() };
     setGachaInventory(prev => [pulledSkill, ...prev]);
-    
     notify("✨ REBORN! LEGENDARY SKILL ACQUIRED! ✨");
   };
 
-  // --- AI BOSS GENERATION ---
   const generateAIBoss = async () => {
     if (!apiKey) { notify("Missing API Key in Settings!"); return; }
     setIsGeneratingBoss(true);
@@ -173,7 +176,7 @@ function App() {
       "def": ${pet.level * 3},
       "reqLevel": ${pet.level},
       "lore": (1 short sentence describing the boss).
-      Do not include markdown tags like \`\`\`json.`;
+      Do not include markdown tags.`;
       
       const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiKey.trim()}`, {
         method: 'POST',
@@ -191,14 +194,12 @@ function App() {
       setBosses(prev => [...prev, newBoss]);
       notify(`🚨 NEW THREAT DETECTED: ${newBoss.name}!`);
     } catch (e) {
-      console.error(e);
       notify("Failed to locate threat. Try again.");
     } finally {
       setIsGeneratingBoss(false);
     }
   };
 
-  // --- AI CHAT ---
   const sendChat = async () => {
     if (!chatInput.trim() || !apiKey) { notify(!apiKey ? "Missing API Key!" : "Type a message!"); return; }
     const userMsg = chatInput.trim();
@@ -206,12 +207,13 @@ function App() {
     setChatLog(prev => [...prev, { sender: 'user', text: userMsg }]);
     
     try {
-      const prompt = `You are my virtual pet cat named MIKAN, a Golden British Shorthair. You are at level ${pet.level}. The user says: "${userMsg}". Respond in character. Give a friendly, engaging response of 2 to 3 sentences. Do not give one-word answers. Use plain English and emojis. Do not output markdown or code formatting.`;
+      // Increased maxOutputTokens to 400 to prevent cutoffs
+      const prompt = `You are my virtual pet cat named MIKAN, a Golden British Shorthair. You are at level ${pet.level}. The user says: "${userMsg}". Respond in character. Give a friendly, engaging response of 2 to 3 complete sentences. Do not cut off your sentences. Use plain English and emojis. Do not output markdown or code formatting.`;
       
       const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiKey.trim()}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: 150, temperature: 0.7 } })
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: 400, temperature: 0.7 } })
       });
       
       const data = await res.json();
@@ -219,7 +221,7 @@ function App() {
       const reply = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "Meow!";
       
       setChatLog(prev => [...prev, { sender: 'pet', text: reply }]);
-      gainExp(25); // Chatting gives big EXP now!
+      gainExp(25);
     } catch (e) {
       setChatLog(prev => [...prev, { sender: 'pet', text: `*hisses* Connection failed: ${e.message}` }]);
     }
@@ -272,14 +274,21 @@ function App() {
     });
   };
 
+  // Turn Processing
   useEffect(() => {
     if (activeMenu === 'battle' && battleState?.turn === 'boss') {
       if (battleState.bossHp <= 0) {
         setCombatLog(prev => [...prev, `🏆 ${battleState.boss.name} defeated! +500 EXP!`]);
         gainExp(500);
-        setTimeout(() => { setActiveMenu('boss'); setBattleState(null); }, 3000);
+        
+        // Trigger the Historical Fact pop-up
+        setTimeout(() => {
+          const randomFact = CHINA_HISTORY_FACTS[Math.floor(Math.random() * CHINA_HISTORY_FACTS.length)];
+          setPostBattleFact(randomFact);
+        }, 1000);
         return;
       }
+      
       const timer = setTimeout(() => {
         setBattleState(prev => {
           let next = { ...prev, turn: 'player' };
@@ -304,11 +313,18 @@ function App() {
       }, 1000);
       return () => clearTimeout(timer);
     }
+    
     if (activeMenu === 'battle' && battleState?.petHp <= 0) {
       setCombatLog(prev => [...prev, `💔 You were defeated.`]);
       setTimeout(() => { setActiveMenu('boss'); setBattleState(null); }, 3000);
     }
   }, [battleState, activeMenu]);
+
+  const closeFactModal = () => {
+    setPostBattleFact(null);
+    setActiveMenu('boss');
+    setBattleState(null);
+  };
 
   if (isLoading) return <div style={{color:'#FFDB00', textAlign:'center', marginTop:'50px'}}>Booting OS...</div>;
 
@@ -372,11 +388,11 @@ function App() {
                         const isCurrent = character.stage === evo.stage;
                         return (
                           <div key={evo.stage} className={`evo-step ${isUnlocked ? 'unlocked' : 'locked'} ${isCurrent ? 'active-step' : ''}`}>
-                             <div className={`cat-sprite-mini ${evo.cls}`}></div>
-                             <div className="evo-info">
+                             <div className="evo-left">
+                               <div className={`cat-sprite-mini ${evo.cls}`}></div>
                                <span className="evo-name">{evo.stage}</span>
-                               <span className="evo-lvl">LV.{evo.lvl}</span>
                              </div>
+                             <span className="evo-lvl">LV.{evo.lvl}</span>
                           </div>
                         )
                       })}
@@ -470,6 +486,18 @@ function App() {
               {/* BATTLE SCREEN */}
               {activeMenu === 'battle' && battleState && (
                 <div className="tab-view active battle-screen">
+                  
+                  {postBattleFact && (
+                    <div className="fact-modal-overlay">
+                      <div className="fact-modal">
+                        <h3 className="fact-title">🎉 THREAT DEFEATED! 🎉</h3>
+                        <p className="fact-subtitle">Knowledge from the Archives:</p>
+                        <p className="fact-text">"{postBattleFact}"</p>
+                        <button className="gacha-btn fact-btn" onClick={closeFactModal}>Close & Continue</button>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="battle-header">VS {battleState.boss.name}</div>
                   <div className="combatants">
                     <div className="combatant">
@@ -491,7 +519,7 @@ function App() {
                     {equippedSkills.map(sk => {
                       const cd = battleState.cooldowns[sk.id] > 0;
                       return (
-                        <button key={sk.id} className="skill-btn" disabled={battleState.turn !== 'player' || cd} onClick={() => useSkill(sk)}>
+                        <button key={sk.id} className="skill-btn" disabled={battleState.turn !== 'player' || cd || postBattleFact} onClick={() => useSkill(sk)}>
                           <span>{sk.icon} {sk.name}</span>
                           {cd && <span style={{color:'var(--pixel-red)'}}>CD: {battleState.cooldowns[sk.id]}</span>}
                         </button>
