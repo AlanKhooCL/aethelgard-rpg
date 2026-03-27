@@ -36,7 +36,7 @@ const getCharacterEvolution = (level) => {
 function App() {
   // --- SETTINGS & DATA STATES ---
   const [apiKey, setApiKey] = useState("");
-  const [geminiModel, setGeminiModel] = useState("gemini-3.0-flash");
+  const [geminiModel, setGeminiModel] = useState("gemini-3.0-flash-preview");
   const [sheetsData, setSheetsData] = useState({ completedChaptersCount: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [sysMessage, setSysMessage] = useState("");
@@ -76,7 +76,10 @@ function App() {
     if (savedModel) setGeminiModel(savedModel);
 
     const savedPet = localStorage.getItem('mofu_pet');
-    if (savedPet) setPet(JSON.parse(savedPet));
+    if (savedPet) {
+      const parsedPet = JSON.parse(savedPet);
+      setPet(p => ({ ...p, ...parsedPet, name: parsedPet.name || "MIKAN" }));
+    }
     
     const savedBosses = localStorage.getItem('mofu_bosses');
     if (savedBosses) setBosses(JSON.parse(savedBosses));
@@ -179,7 +182,7 @@ function App() {
       const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiKey.trim()}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { response_mime_type: "application/json" } })
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { response_mime_type: "application/json", temperature: 0.8 } })
       });
       
       const data = await res.json();
@@ -207,12 +210,12 @@ function App() {
     setChatLog(prev => [...prev, { sender: 'user', text: userMsg }]);
     
     try {
-      const prompt = `You are my virtual pet cat named MIKAN, a Golden British Shorthair. You are at level ${pet.level}. My stats are: Hunger ${Math.floor(pet.hunger)}%, Happiness ${Math.floor(pet.happiness)}%, Energy ${Math.floor(pet.energy)}%. The user says: "${userMsg}". Respond in character in 1 short sentence. Use emojis.`;
+      const prompt = `You are my virtual pet cat named MIKAN, a Golden British Shorthair. You are at level ${pet.level}. My stats are: Hunger ${Math.floor(pet.hunger)}%, Happiness ${Math.floor(pet.happiness)}%, Energy ${Math.floor(pet.energy)}%. The user says: "${userMsg}". Respond in character in 1 short sentence. Use plain English. Do not output markdown, symbols, or code blocks. Use emojis.`;
       
       const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiKey.trim()}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: 80 } })
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: 100, temperature: 0.7 } })
       });
       
       const data = await res.json();
@@ -223,7 +226,7 @@ function App() {
       gainExp(5);
       setPet(p => ({ ...p, happiness: Math.min(100, p.happiness + 10) }));
     } catch (e) {
-      setChatLog(prev => [...prev, { sender: 'pet', text: `*hisses* Error: ${e.message}` }]);
+      setChatLog(prev => [...prev, { sender: 'pet', text: `*hisses* Connection failed: ${e.message}` }]);
     }
   };
 
@@ -234,7 +237,7 @@ function App() {
         if (p.hunger >= 100) return p;
         next.hunger = Math.min(100, p.hunger + 20);
         next.happiness = Math.min(100, p.happiness + 5);
-        notify("Fed MIKAN! +15 EXP");
+        notify(`Fed ${pet.name}! +15 EXP`);
         gainExp(15);
       } else if (action === 'play') {
         if (p.energy < 10) return p;
@@ -356,10 +359,14 @@ function App() {
   return (
     <div className="rpg-container">
       <div className="device">
+        
         <div className="device-top">
           <span className="brand">POCKETPAL OS</span>
           <div className="led"></div>
-          <button className="settings-btn" onClick={() => setActiveMenu('settings')}>⚙</button>
+          <div className="top-nav-actions">
+            <a href="https://alankhoocl.github.io/AI-Learning-Management/" target="_blank" rel="noopener noreferrer" className="settings-btn" style={{textDecoration: 'none'}}>A.L.A.N</a>
+            <button className="settings-btn" onClick={() => setActiveMenu('settings')}>⚙</button>
+          </div>
         </div>
 
         <div className="screen-bezel">
@@ -444,11 +451,10 @@ function App() {
                       <div className="model-chip-group">
                           <button className={`model-chip ${geminiModel === 'gemini-2.0-flash' ? 'active' : ''}`} onClick={() => {setGeminiModel('gemini-2.0-flash'); localStorage.setItem('mofu_model', 'gemini-2.0-flash');}}>2.0_FLASH</button>
                           <button className={`model-chip ${geminiModel === 'gemini-2.5-flash' ? 'active' : ''}`} onClick={() => {setGeminiModel('gemini-2.5-flash'); localStorage.setItem('mofu_model', 'gemini-2.5-flash');}}>2.5_FLASH</button>
-                          <button className={`model-chip ${geminiModel === 'gemini-3.0-flash' ? 'active' : ''}`} onClick={() => {setGeminiModel('gemini-3.0-flash'); localStorage.setItem('mofu_model', 'gemini-3.0-flash');}}>3.0_FLASH</button>
+                          <button className={`model-chip ${geminiModel === 'gemini-2.5-pro' ? 'active' : ''}`} onClick={() => {setGeminiModel('gemini-2.5-pro'); localStorage.setItem('mofu_model', 'gemini-2.5-pro');}}>2.5_PRO</button>
+                          <button className={`model-chip ${geminiModel === 'gemini-3.0-flash-preview' ? 'active' : ''}`} onClick={() => {setGeminiModel('gemini-3.0-flash-preview'); localStorage.setItem('mofu_model', 'gemini-3.0-flash-preview');}}>3.0_FLASH</button>
                       </div>
                   </div>
-
-                  <a href="https://alankhoocl.github.io/AI-Learning-Management/" target="_blank" rel="noopener noreferrer" className="gacha-btn" style={{textAlign:'center', textDecoration:'none', marginTop:'10px', display:'block'}}>STUDY CENTER</a>
                 </div>
               )}
 
